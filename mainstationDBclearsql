@@ -1,0 +1,19 @@
+truncate table Home;
+
+truncate table PRI_Beacon;
+
+truncate table Beacon;
+
+truncate table PRI_Router;
+
+truncate table Pos_Data;
+
+truncate table Device;
+
+truncate table Router;
+
+truncate table Space;
+
+truncate table User;
+
+
