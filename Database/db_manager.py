@@ -5,8 +5,10 @@
 # Created by IT DICE on 2023/04/30.
 #
 import string
-from enum import Enum
 import random
+import pymysql
+from enum import Enum
+from queue import Queue
 
 
 class AccessType(Enum):
@@ -50,14 +52,14 @@ type_description = {
 
 
 class DatabaseTX:
-    def __init__(self, access_type, data_type, values):
+    def __init__(self, access_type: AccessType, data_type: DataType, values: dict):
         self.key = self.key_generator()
         self.access_type = access_type
         self.data_type = data_type
         self.values = values
 
     @staticmethod
-    def key_generator():  # Database TX Ticket key
+    def key_generator() -> str:  # Database TX Ticket key
         length = 32
         string_pool = string.ascii_letters + string.digits
 
@@ -80,7 +82,7 @@ class DatabaseTX:
 
 
 class DatabaseRX:
-    def __init__(self, key, data_type, values, valid):
+    def __init__(self, key: str, data_type: DataType, values: dict, valid: bool):
         self.key = key
         self.data_type = data_type
         self.values = values
@@ -95,3 +97,33 @@ class DatabaseRX:
         print(f"Contain Values =>")
         print(f"{self.values}")
         print("--------------------------------------------------------------")
+
+
+class DatabaseManagerSystem:
+    def __init__(self, tx_queue: Queue, rx_queue: Queue):
+        self.tx_queue = tx_queue
+        self.rx_queue = rx_queue
+        self.id_list = []
+
+        self.host = 'localhost'
+        self.port = 3306
+        self.user = 'mainstation'
+        self.password = '17fd1cefff705e7f803e'
+        self.db = 'togethome'
+        self.charset = 'utf8'
+
+    def update_id_list(self):
+        connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                          password=self.password, db=self.db, charset=self.charset)
+        cursor = connection.cursor()
+        sql_list = ["User", "Space", "Router", "Device", "Beacon"]
+
+        for type in sql_list:
+            sql = "SELECT ID FROM " + type
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            for data in result:
+                self.id_list.append(data[0])
+
+        connection.commit()
+        connection.close()
