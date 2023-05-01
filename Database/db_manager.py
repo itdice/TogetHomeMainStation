@@ -114,16 +114,42 @@ class DatabaseManagerSystem:
 
     def update_id_list(self):
         connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
-                                          password=self.password, db=self.db, charset=self.charset)
+                                     password=self.password, db=self.db, charset=self.charset)
         cursor = connection.cursor()
         sql_list = ["User", "Space", "Router", "Device", "Beacon"]
 
-        for type in sql_list:
-            sql = "SELECT ID FROM " + type
+        for type_name in sql_list:
+            sql = "SELECT ID FROM " + type_name
             cursor.execute(sql)
             result = cursor.fetchall()
             for data in result:
-                self.id_list.append(data[0])
+                self.id_list.append(data[0].hex().upper())
 
         connection.commit()
         connection.close()
+
+    def new_id(self, data_type: DataType) -> str:
+        start_num = {DataType.USER: 0x100000000000,
+                     DataType.SPACE: 0x200000000000,
+                     DataType.ROUTER: 0x400000000000,
+                     DataType.DEVICE: 0x600000000000
+                     }
+        end_num = {DataType.USER: 0x1FFFFFFFFFFF,
+                   DataType.SPACE: 0x3FFFFFFFFFFF,
+                   DataType.ROUTER: 0x5FFFFFFFFFFF,
+                   DataType.DEVICE: 0x9FFFFFFFFFFF
+                   }
+
+        granted = False  # Unique check
+        result = ""
+
+        while not granted:  # Generates a unique hex ID
+            int_result = random.randrange(start_num[data_type], end_num[data_type])
+            str_result = hex(int_result).upper()[2:]
+            if str_result in self.id_list:
+                granted = False
+            else:
+                granted = True
+                result = str_result
+
+        return result
