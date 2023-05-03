@@ -1,3 +1,9 @@
+/*
+mainstationDBcreation.sql
+Toget Home Main Station Server
+
+Created by IT DICE on 2023/04/30.
+*/
 create table Home
 (
     Home_name     varchar(32) not null
@@ -28,13 +34,14 @@ create table Space
 
 create table Beacon
 (
-    ID      binary(6) not null
+    ID        binary(6)  not null
         primary key,
-    State   binary(2) not null,
-    SpaceID binary(6) not null,
-    Pos_X   float     not null,
-    Pos_Y   float     not null,
-    Power   int       null,
+    State     binary(2)  not null,
+    SpaceID   binary(6)  not null,
+    Pos_X     float      not null,
+    Pos_Y     float      not null,
+    Power     int        null,
+    isPrimary tinyint(1) not null,
     constraint Beacon_Space_ID_fk
         foreign key (SpaceID) references Space (ID)
 )
@@ -42,11 +49,10 @@ create table Beacon
 
 create table PRI_Beacon
 (
-    BeaconID  binary(6) not null,
-    SpaceID   binary(6) not null,
-    Min_RSSI  int       null,
-    Max_RSSI  int       null,
-    Data_time timestamp null,
+    BeaconID binary(6) not null,
+    SpaceID  binary(6) not null,
+    Min_RSSI int       null,
+    Max_RSSI int       null,
     primary key (BeaconID, SpaceID),
     constraint PRI_Beacon_Beacon_ID_fk
         foreign key (BeaconID) references Beacon (ID),
@@ -57,11 +63,10 @@ create table PRI_Beacon
 
 create table PRI_Router
 (
-    RouterID  binary(6) not null,
-    SpaceID   binary(6) not null,
-    Min_RSSI  int       null,
-    Max_RSSI  int       null,
-    Data_time timestamp null,
+    RouterID binary(6) not null,
+    SpaceID  binary(6) not null,
+    Min_RSSI int       null,
+    Max_RSSI int       null,
     primary key (RouterID, SpaceID),
     constraint PRI_Router_Router_ID_fk
         foreign key (RouterID) references Router (ID),
