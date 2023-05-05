@@ -18,14 +18,6 @@ class AccessType(Enum):  # Database Access Type
     DELETE = 0x40
 
 
-access_description = {
-    AccessType.REQUEST: "Request",
-    AccessType.REGISTER: "Register",
-    AccessType.UPDATE: "Update",
-    AccessType.DELETE: "Delete"
-}
-
-
 class DataType(Enum):  # Database Data Type
     HOME = 0x10
     SPACE = 0x20
@@ -38,17 +30,24 @@ class DataType(Enum):  # Database Data Type
     POS_DATA = 0x70
 
 
-type_description = {
-    DataType.HOME: "Home",
-    DataType.SPACE: "Space",
-    DataType.USER: "User",
-    DataType.DEVICE: "Device",
-    DataType.BEACON: "Beacon",
-    DataType.PRI_BEACON: "Primary Beacon",
-    DataType.ROUTER: "Router",
-    DataType.PRI_ROUTER: "Primary Router",
-    DataType.POS_DATA: "Position Data"
-}
+class TypeDescription:
+    access = {
+        AccessType.REQUEST: "Request",
+        AccessType.REGISTER: "Register",
+        AccessType.UPDATE: "Update",
+        AccessType.DELETE: "Delete"
+    }
+    data = {
+        DataType.HOME: "Home",
+        DataType.SPACE: "Space",
+        DataType.USER: "User",
+        DataType.DEVICE: "Device",
+        DataType.BEACON: "Beacon",
+        DataType.PRI_BEACON: "Primary Beacon",
+        DataType.ROUTER: "Router",
+        DataType.PRI_ROUTER: "Primary Router",
+        DataType.POS_DATA: "Position Data"
+    }
 
 
 class DatabaseTX:  # Tickets containing information to send requests to the database
@@ -70,8 +69,8 @@ class DatabaseTX:  # Tickets containing information to send requests to the data
         return key
 
     def description(self):  # Print Data
-        access_name = access_description.get(self.access_type, "Unknown")
-        data_name = type_description.get(self.data_type, "Unknown")
+        access_name = TypeDescription.access.get(self.access_type, "Unknown")
+        data_name = TypeDescription.data.get(self.data_type, "Unknown")
 
         print("--------------------------------------------------------------")
         print(f"Send Database Access Type = {access_name}, Data Type = {data_name}")
@@ -89,7 +88,7 @@ class DatabaseRX:  # Tickets containing information received from the database
         self.valid = valid
 
     def description(self):  # Print Data
-        data_name = type_description.get(self.data_type, "Unknown")
+        data_name = TypeDescription.data.get(self.data_type, "Unknown")
 
         print("--------------------------------------------------------------")
         print(f"Receive Database Data Type = {data_name}")
@@ -222,7 +221,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.PRI_BEACON: # Primary Beacon RSSI Data Response with No Option
+        elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Response with No Option
 
             sql = "SELECT HEX(BeaconID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Beacon"
 
@@ -257,7 +256,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.PRI_ROUTER: # Primary Router RSSI Data Response with No Option
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Response with No Option
 
             sql = "SELECT HEX(RouterID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Router"
 
@@ -300,6 +299,15 @@ class DatabaseManagerSystem:
 
         rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
         return rx_ticket
+
+    def db_register(self, tx_ticket: DatabaseTX) -> DatabaseRX:
+        pass
+
+    def db_update(self, tx_ticket: DatabaseTX) -> DatabaseRX:
+        pass
+
+    def db_delete(self, tx_ticket: DatabaseTX) -> DatabaseRX:
+        pass
 
     def update_id_list(self):
         try:
