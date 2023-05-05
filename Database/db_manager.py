@@ -11,7 +11,7 @@ from enum import Enum
 from queue import Queue
 
 
-class AccessType(Enum):
+class AccessType(Enum):  # Database Access Type
     REQUEST = 0x10
     REGISTER = 0x20
     UPDATE = 0x30
@@ -26,7 +26,7 @@ access_description = {
 }
 
 
-class DataType(Enum):
+class DataType(Enum):  # Database Data Type
     HOME = 0x10
     SPACE = 0x20
     USER = 0x30
@@ -51,7 +51,7 @@ type_description = {
 }
 
 
-class DatabaseTX:
+class DatabaseTX:  # Tickets containing information to send requests to the database
     def __init__(self, access_type: AccessType, data_type: DataType, values: dict):
         self.key = self.key_generator()
         self.access_type = access_type
@@ -81,8 +81,8 @@ class DatabaseTX:
         print("--------------------------------------------------------------")
 
 
-class DatabaseRX:
-    def __init__(self, key: str, data_type: DataType, values: dict, valid: bool):
+class DatabaseRX:  # Tickets containing information received from the database
+    def __init__(self, key: str, data_type: DataType, values: list, valid: bool):
         self.key = key
         self.data_type = data_type
         self.values = values
@@ -112,9 +112,204 @@ class DatabaseManagerSystem:
         self.db = 'togethome'
         self.charset = 'utf8'
 
+    def db_request(self, tx_ticket: DatabaseTX) -> DatabaseRX:
+        try:
+            connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                         password=self.password, db=self.db, charset=self.charset)
+        except pymysql.err.OperationalError as e:
+            code, msg = e.args
+            print(f"DB Request Connect ERROR[{code}] : {msg}")
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            return rx_ticket
+
+        cursor = connection.cursor()
+
+        if tx_ticket.data_type == DataType.HOME:  # Home Data DB Response with No Option
+
+            sql = "SELECT Home_name, Interval_time, Expire_count FROM Home"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()[0]
+                response_values = [{"home_name": data[0],
+                                    "interval_time": data[1],
+                                    "expire_count": data[2]}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Response with No Option
+
+            sql = "SELECT HEX(ID), Familiar_name, Size_X, Size_Y FROM Space"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"id": cube_data[0],
+                                 "familiar_name": cube_data[1],
+                                 "size_x": cube_data[2],
+                                 "size_y": cube_data[3]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.USER:  # User Data DB Response with No Option
+
+            sql = "SELECT HEX(ID), User_name FROM User"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"id": cube_data[0],
+                                 "user_name": cube_data[1]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Response with UserID Option
+            user_id_option = tx_ticket.values.get("user_id")
+
+            sql = "SELECT HEX(ID), Familiar_name, HEX(State), HEX(UserID) FROM Device"
+            if user_id_option is not None:
+                sql = sql + f"WHERE HEX(UserID) = '{user_id_option}'"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"id": cube_data[0],
+                                 "familiar_name": cube_data[1],
+                                 "state": cube_data[2],
+                                 "user_id": cube_data[3]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Response with SpaceID and isPrimary Option
+            space_id_option = tx_ticket.values.get("space_id")
+            isprimary_option = tx_ticket.values.get("isprimary")
+
+            sql = "SELECT HEX(ID), HEX(State), HEX(SpaceID), Pos_X, Pos_Y, Power, isPrimary FROM Beacon"
+            if space_id_option is None and isprimary_option is not None:
+                sql = sql + f"WHERE isPrimary = {isprimary_option}"
+            elif space_id_option is not None and isprimary_option is None:
+                sql = sql + f"WHERE HEX(SpaceID) = '{space_id_option}'"
+            else:
+                sql = sql + f"WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"id": cube_data[0],
+                                 "state": cube_data[1],
+                                 "space_id": cube_data[2],
+                                 "pos_x": cube_data[3],
+                                 "pos_y": cube_data[4],
+                                 "power": cube_data[5],
+                                 "isprimary": cube_data[6]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.PRI_BEACON: # Primary Beacon RSSI Data Response with No Option
+
+            sql = "SELECT HEX(BeaconID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Beacon"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"beacon_id": cube_data[0],
+                                 "space_id": cube_data[1],
+                                 "min_rssi": cube_data[2],
+                                 "max_rssi": cube_data[3]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Response with No Option
+
+            sql = "SELECT HEX(ID), SSID, MAC FROM Router"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"id": cube_data[0],
+                                 "ssid": cube_data[1],
+                                 "mac": cube_data[2]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.PRI_ROUTER: # Primary Router RSSI Data Response with No Option
+
+            sql = "SELECT HEX(RouterID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Router"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"router_id": cube_data[0],
+                                 "space_id": cube_data[1],
+                                 "min_rssi": cube_data[2],
+                                 "max_rssi": cube_data[3]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Response with No Option
+
+            sql = "SELECT HEX(DeviceID), HEX(SpaceID), Pos_X, Pos_Y FROM Pos_Data"
+
+            count = cursor.execute(sql)
+            if count > 0:
+                response_valid = True
+                data = cursor.fetchall()
+                response_values = []
+                for cube_data in data:
+                    temp_data = {"device_id": cube_data[0],
+                                 "space_id": cube_data[1],
+                                 "pos_x": cube_data[2],
+                                 "pos_y": cube_data[3]}
+                    response_values.append(temp_data)
+            else:
+                response_valid = False
+                response_values = [{"msg": "No Data"}]
+        else:  # Type Error
+            print(f"DB Request Type Error")
+            response_valid = False
+            response_values = [{"msg": "Data Type Error"}]
+
+        rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
+        return rx_ticket
+
     def update_id_list(self):
-        connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
-                                     password=self.password, db=self.db, charset=self.charset)
+        try:
+            connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                         password=self.password, db=self.db, charset=self.charset)
+        except pymysql.err.OperationalError as e:
+            code, msg = e.args
+            print(f"Update ID List Func Connect ERROR[{code}] : {msg}")
+            return None
+
         cursor = connection.cursor()
         sql_list = ["User", "Space", "Router", "Device", "Beacon"]
 
