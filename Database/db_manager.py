@@ -123,7 +123,7 @@ class DatabaseManagerSystem:
 
         cursor = connection.cursor()
 
-        if tx_ticket.data_type == DataType.HOME:  # Home Data DB Response with No Option
+        if tx_ticket.data_type == DataType.HOME:  # Home Data DB Request with No Option
 
             sql = "SELECT Home_name, Interval_time, Expire_count FROM Home"
 
@@ -137,7 +137,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Response with No Option
+        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Request with No Option
 
             sql = "SELECT HEX(ID), Familiar_name, Size_X, Size_Y FROM Space"
 
@@ -155,7 +155,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.USER:  # User Data DB Response with No Option
+        elif tx_ticket.data_type == DataType.USER:  # User Data DB Request with No Option
 
             sql = "SELECT HEX(ID), User_name FROM User"
 
@@ -171,7 +171,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Response with UserID Option
+        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Request with UserID Option
             user_id_option = tx_ticket.values.get("user_id")
 
             sql = "SELECT HEX(ID), Familiar_name, HEX(State), HEX(UserID) FROM Device"
@@ -192,7 +192,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Response with SpaceID and isPrimary Option
+        elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Request with SpaceID and isPrimary Option
             space_id_option = tx_ticket.values.get("space_id")
             isprimary_option = tx_ticket.values.get("isprimary")
 
@@ -221,7 +221,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Response with No Option
+        elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Request with No Option
 
             sql = "SELECT HEX(BeaconID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Beacon"
 
@@ -239,7 +239,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Response with No Option
+        elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Request with No Option
 
             sql = "SELECT HEX(ID), SSID, MAC FROM Router"
 
@@ -256,7 +256,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Response with No Option
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Request with No Option
 
             sql = "SELECT HEX(RouterID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Router"
 
@@ -274,7 +274,7 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Response with No Option
+        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Request with No Option
 
             sql = "SELECT HEX(DeviceID), HEX(SpaceID), Pos_X, Pos_Y FROM Pos_Data"
 
@@ -315,7 +315,7 @@ class DatabaseManagerSystem:
 
         cursor = connection.cursor()
 
-        if tx_ticket.data_type == DataType.HOME:
+        if tx_ticket.data_type == DataType.HOME:  # Home Data DB
             pass
         elif tx_ticket.data_type == DataType.SPACE:
             pass
