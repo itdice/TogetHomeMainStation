@@ -118,7 +118,7 @@ class DatabaseManagerSystem:
         except pymysql.err.OperationalError as e:
             code, msg = e.args
             print(f"DB Request Connect ERROR[{code}] : {msg}")
-            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Failed"}], False)
             return rx_ticket
 
         cursor = connection.cursor()
@@ -176,7 +176,7 @@ class DatabaseManagerSystem:
 
             sql = "SELECT HEX(ID), Familiar_name, HEX(State), HEX(UserID) FROM Device"
             if user_id_option is not None:
-                sql = sql + f"WHERE HEX(UserID) = '{user_id_option}'"
+                sql += f" WHERE HEX(UserID) = '{user_id_option}'"
 
             count = cursor.execute(sql)
             if count > 0:
@@ -198,11 +198,11 @@ class DatabaseManagerSystem:
 
             sql = "SELECT HEX(ID), HEX(State), HEX(SpaceID), Pos_X, Pos_Y, Power, isPrimary FROM Beacon"
             if space_id_option is None and isprimary_option is not None:
-                sql = sql + f"WHERE isPrimary = {isprimary_option}"
+                sql += f" WHERE isPrimary = {isprimary_option}"
             elif space_id_option is not None and isprimary_option is None:
-                sql = sql + f"WHERE HEX(SpaceID) = '{space_id_option}'"
+                sql += f" WHERE HEX(SpaceID) = '{space_id_option}'"
             else:
-                sql = sql + f"WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
+                sql += f" WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
 
             count = cursor.execute(sql)
             if count > 0:
@@ -304,35 +304,160 @@ class DatabaseManagerSystem:
         return rx_ticket
 
     def db_register(self, tx_ticket: DatabaseTX) -> DatabaseRX:
+        self.update_id_list()  # Update the ID List to generate a new ID
         try:
             connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
                                          password=self.password, db=self.db, charset=self.charset)
         except pymysql.err.OperationalError as e:
             code, msg = e.args
             print(f"DB Register Connect ERROR[{code}] : {msg}")
-            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Failed"}], False)
             return rx_ticket
 
         cursor = connection.cursor()
 
-        if tx_ticket.data_type == DataType.HOME:  # Home Data DB
-            pass
-        elif tx_ticket.data_type == DataType.SPACE:
-            pass
-        elif tx_ticket.data_type == DataType.USER:
-            pass
-        elif tx_ticket.data_type == DataType.DEVICE:
-            pass
-        elif tx_ticket.data_type == DataType.BEACON:
-            pass
-        elif tx_ticket.data_type == DataType.PRI_BEACON:
-            pass
-        elif tx_ticket.data_type == DataType.ROUTER:
-            pass
-        elif tx_ticket.data_type == DataType.PRI_ROUTER:
-            pass
-        elif tx_ticket.data_type == DataType.POS_DATA:
-            pass
+        if tx_ticket.data_type == DataType.HOME:  # Home Data DB Register
+
+            sql = f"""
+            INSERT INTO Home(Home_name, Interval_time, Expire_count)
+            VALUES ('{tx_ticket.values.get('home_name', 'Empty')}',
+            {tx_ticket.values.get('interval_time')}, {tx_ticket.values.get('expire_count')})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success"}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Register
+            new_space_id = self.new_id(DataType.SPACE)
+
+            sql = f"""
+            INSERT INTO Space(ID, Familiar_name, Size_X, Size_Y)
+            VALUES (UNHEX('{new_space_id}'), '{tx_ticket.values.get('familiar_name')}',
+            {tx_ticket.values.get('size_x', 0.0)}, {tx_ticket.values.get('size_y', 0.0)})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success", "id": new_space_id}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.USER:  # User Data DB Register
+            new_user_id = self.new_id(DataType.USER)
+
+            sql = f"""
+            INSERT INTO User(ID, User_name)
+            VALUES (UNHEX('{new_user_id}'),
+            '{tx_ticket.values.get('user_name')}')"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success", "id": new_user_id}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Register
+            new_device_id = self.new_id(DataType.DEVICE)
+
+            sql = f"""
+            INSERT INTO Device(ID, Familiar_name, State, UserID)
+            VALUES (UNHEX('{new_device_id}'), '{tx_ticket.values.get('familiar_name')}',
+            UNHEX('{tx_ticket.values.get('state', 'FFFF')}'),
+            UNHEX('{tx_ticket.values.get('user_id')}'))"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success", "id": new_device_id}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Register
+
+            sql = f"""
+            INSERT INTO Beacon(ID, State, SpaceID, Pos_X, Pos_Y, Power, isPrimary)
+            VALUES (UNHEX('{tx_ticket.values.get('id')}'),
+            UNHEX('{tx_ticket.values.get('state', 'FFFF')}'),
+            UNHEX('{tx_ticket.values.get('space_id')}'),
+            {tx_ticket.values.get('pos_x', 0.0)},
+            {tx_ticket.values.get('pos_y', 0.0)},
+            {tx_ticket.values.get('power', -62)},
+            {bool(tx_ticket.values.get('isprimary', 0))})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success"}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data DB Register
+
+            sql = f"""
+            INSERT INTO PRI_Beacon(BeaconID, SpaceID, Min_RSSI, Max_RSSI)
+            VALUES (UNHEX('{tx_ticket.values.get('beacon_id')}'),
+            UNHEX('{tx_ticket.values.get('space_id')}'),
+            {tx_ticket.values.get('min_rssi', -90)},
+            {tx_ticket.values.get('max_rssi', -70)})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success"}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.ROUTER:  # Router Data DB Register
+            new_router_id = self.new_id(DataType.ROUTER)
+
+            sql = f"""
+            INSERT INTO Router(ID, SSID, MAC)
+            VALUES (UNHEX('{new_router_id}'), '{tx_ticket.values.get('ssid')}',
+            UNHEX('{tx_ticket.values.get('mac')}'))"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success", "id": new_router_id}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data DB Register
+
+            sql = f"""
+            INSERT INTO PRI_Router(RouterID, SpaceID, Min_RSSI, Max_RSSI)
+            VALUES (UNHEX('{tx_ticket.values.get('router_id')}'),
+            UNHEX('{tx_ticket.values.get('space_id')}'),
+            {tx_ticket.values.get('min_rssi', -90)},
+            {tx_ticket.values.get('max_rssi', -70)})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success"}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
+        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data DB Register
+
+            sql = f"""
+            INSERT INTO Pos_Data(DeviceID, SpaceID, Pos_X, Pos_Y)
+            VALUES (UNHEX('{tx_ticket.values.get('device_id')}'),
+            UNHEX('{tx_ticket.values.get('space_id')}'),
+            {tx_ticket.values.get('pos_x', 0.0)},
+            {tx_ticket.values.get('pos_y', 0.0)})"""
+
+            count = cursor.execute(sql)
+            if count is 1:
+                response_valid = True
+                response_values = [{"msg": "Register Success"}]
+            else:
+                response_valid = False
+                response_values = [{"msg": "Register Failed"}]
         else:
             print(f"DB Register Data Type Error")
             response_valid = False
