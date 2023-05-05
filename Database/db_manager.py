@@ -293,21 +293,138 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         else:  # Type Error
-            print(f"DB Request Type Error")
+            print(f"DB Request Data Type Error")
             response_valid = False
             response_values = [{"msg": "Data Type Error"}]
+
+        connection.commit()
+        connection.close()
 
         rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
         return rx_ticket
 
     def db_register(self, tx_ticket: DatabaseTX) -> DatabaseRX:
-        pass
+        try:
+            connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                         password=self.password, db=self.db, charset=self.charset)
+        except pymysql.err.OperationalError as e:
+            code, msg = e.args
+            print(f"DB Register Connect ERROR[{code}] : {msg}")
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            return rx_ticket
+
+        cursor = connection.cursor()
+
+        if tx_ticket.data_type == DataType.HOME:
+            pass
+        elif tx_ticket.data_type == DataType.SPACE:
+            pass
+        elif tx_ticket.data_type == DataType.USER:
+            pass
+        elif tx_ticket.data_type == DataType.DEVICE:
+            pass
+        elif tx_ticket.data_type == DataType.BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.POS_DATA:
+            pass
+        else:
+            print(f"DB Register Data Type Error")
+            response_valid = False
+            response_values = [{"msg": "Data Type Error"}]
+
+        connection.commit()
+        connection.close()
+
+        rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
+        return rx_ticket
 
     def db_update(self, tx_ticket: DatabaseTX) -> DatabaseRX:
-        pass
+        try:
+            connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                         password=self.password, db=self.db, charset=self.charset)
+        except pymysql.err.OperationalError as e:
+            code, msg = e.args
+            print(f"DB Register Connect ERROR[{code}] : {msg}")
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            return rx_ticket
+
+        cursor = connection.cursor()
+
+        if tx_ticket.data_type == DataType.HOME:
+            pass
+        elif tx_ticket.data_type == DataType.SPACE:
+            pass
+        elif tx_ticket.data_type == DataType.USER:
+            pass
+        elif tx_ticket.data_type == DataType.DEVICE:
+            pass
+        elif tx_ticket.data_type == DataType.BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.POS_DATA:
+            pass
+        else:
+            print(f"DB Register Data Type Error")
+            response_valid = False
+            response_values = [{"msg": "Data Type Error"}]
+
+        connection.commit()
+        connection.close()
+
+        rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
+        return rx_ticket
 
     def db_delete(self, tx_ticket: DatabaseTX) -> DatabaseRX:
-        pass
+        try:
+            connection = pymysql.connect(host=self.host, port=self.port, user=self.user,
+                                         password=self.password, db=self.db, charset=self.charset)
+        except pymysql.err.OperationalError as e:
+            code, msg = e.args
+            print(f"DB Register Connect ERROR[{code}] : {msg}")
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
+            return rx_ticket
+
+        cursor = connection.cursor()
+
+        if tx_ticket.data_type == DataType.HOME:
+            pass
+        elif tx_ticket.data_type == DataType.SPACE:
+            pass
+        elif tx_ticket.data_type == DataType.USER:
+            pass
+        elif tx_ticket.data_type == DataType.DEVICE:
+            pass
+        elif tx_ticket.data_type == DataType.BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_BEACON:
+            pass
+        elif tx_ticket.data_type == DataType.ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:
+            pass
+        elif tx_ticket.data_type == DataType.POS_DATA:
+            pass
+        else:
+            print(f"DB Register Data Type Error")
+            response_valid = False
+            response_values = [{"msg": "Data Type Error"}]
+
+        connection.commit()
+        connection.close()
+
+        rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
+        return rx_ticket
 
     def update_id_list(self):
         try:
