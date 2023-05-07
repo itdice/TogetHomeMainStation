@@ -28,7 +28,7 @@ db_thread.start()
 
 
 @sio.event
-def connect(sid):
+def connect(sid, environ):
     print("--------------------------------------------")
     print(f"Client [{sid}] Connected!!!")
     print("--------------------------------------------")
