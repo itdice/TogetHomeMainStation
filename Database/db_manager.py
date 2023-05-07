@@ -4,6 +4,7 @@
 #
 # Created by IT DICE on 2023/04/30.
 #
+import time
 import string
 import random
 import pymysql
@@ -394,7 +395,7 @@ class DatabaseManagerSystem:
             return rx_ticket
 
         count = cursor.execute(sql)
-        if count is 1:
+        if count == 1:
             response_valid = True
             response_values = [{"msg": "Register Success", "id": registered_id}]
         else:
@@ -500,7 +501,7 @@ class DatabaseManagerSystem:
             return rx_ticket
 
         count = cursor.execute(sql)
-        if count is 1:
+        if count == 1:
             response_valid = True
             response_values = [{"msg": "Update Success"}]
         else:
@@ -580,7 +581,7 @@ class DatabaseManagerSystem:
             return rx_ticket
 
         count = cursor.execute(sql)
-        if count is 1:
+        if count == 1:
             response_valid = True
             response_values = [{"msg": "Delete Success"}]
         else:
@@ -665,3 +666,4 @@ class DatabaseManagerSystem:
                     data_task: DatabaseRX = self.rx_queue.get()
                     self.rx_key_list.remove(0)
                     return data_task
+                time.sleep(0.01)
