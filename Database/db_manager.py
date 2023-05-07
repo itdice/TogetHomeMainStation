@@ -656,12 +656,12 @@ class DatabaseManagerSystem:
             else:
                 return_ticket = DatabaseRX(now_task.key, now_task.data_type, [{"msg": "Access Error"}], False)
 
-            self.rx_queue.put(return_ticket, block=True, timeout=None)
+            self.rx_queue.put(return_ticket)
 
     def wait_to_return(self, ticket_key: str) -> DatabaseRX:
         while True:
             with self.lock:
                 if self.rx_key_list[0] == ticket_key:
-                    data_task: DatabaseRX = self.rx_queue.get(block=True, timeout=None)
+                    data_task: DatabaseRX = self.rx_queue.get()
                     self.rx_key_list.remove(0)
                     return data_task

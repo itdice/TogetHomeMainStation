@@ -4,13 +4,27 @@
 #
 # Created by IT DICE on 2023/04/30.
 #
-import socketio
+import sys
+import os
+import threading
 import eventlet
-from enum import Enum
+import socketio
 from queue import Queue
 
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))  # Master Path Finder
+from Database import db_manager
+
+# Device Connect Part
 sio = socketio.Server(async_mode="eventlet")
 app = socketio.WSGIApp(sio)
+
+# DB Manger Part
+db_tx_queue = Queue(maxsize=4096)
+db_rx_queue = Queue(maxsize=4096)
+db_connector = db_manager.DatabaseManagerSystem(db_tx_queue, db_rx_queue)
+db_thread = threading.Thread(target=db_connector.startup, args=())
+db_thread.daemon = True
+db_thread.start()
 
 
 @sio.event
