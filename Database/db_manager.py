@@ -9,6 +9,7 @@ import random
 import pymysql
 from enum import Enum
 from queue import Queue
+from threading import Lock
 
 
 class AccessType(Enum):  # Database Access Type
@@ -100,9 +101,11 @@ class DatabaseRX:  # Tickets containing information received from the database
 
 class DatabaseManagerSystem:
     def __init__(self, tx_queue: Queue, rx_queue: Queue):
-        self.tx_queue = tx_queue
-        self.rx_queue = rx_queue
-        self.id_list = []
+        self.tx_queue: Queue = tx_queue
+        self.rx_queue: Queue = rx_queue
+        self.id_list: list = []
+        self.rx_key_list: list = []
+        self.lock = Lock()
 
         self.host = 'localhost'
         self.port = 3306
@@ -384,7 +387,7 @@ class DatabaseManagerSystem:
             UNHEX('{tx_ticket.values.get('space_id')}'),
             {tx_ticket.values.get('pos_x', 0.0)},
             {tx_ticket.values.get('pos_y', 0.0)})"""
-        else:
+        else:  # Type Error
             print(f"DB Register Data Type Error")
             rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type,
                                    [{"msg": "Data Type Error"}], False)
@@ -490,7 +493,7 @@ class DatabaseManagerSystem:
             Pos_Y = {tx_ticket.values.get('pos_y')}
             WHERE HEX(DeviceID) = '{tx_ticket.values.get('device_id')}'
             """
-        else:
+        else:  # Type Error
             print(f"DB Update Data Type Error")
             rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type,
                                    [{"msg": "Data Type Error"}], False)
@@ -527,50 +530,50 @@ class DatabaseManagerSystem:
             DELETE FROM Home
             WHERE Home_name = '{tx_ticket.values.get('home_name')}'
             """
-        elif tx_ticket.data_type == DataType.SPACE:
+        elif tx_ticket.data_type == DataType.SPACE:  # Space Data Delete
             sql = f"""
             DELETE FROM Space
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
-        elif tx_ticket.data_type == DataType.USER:
+        elif tx_ticket.data_type == DataType.USER:  # User Data Delete
             sql = f"""
             DELETE FROM User
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
-        elif tx_ticket.data_type == DataType.DEVICE:
+        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data Delete
             sql = f"""
             DELETE FROM Device
-            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'가
             """
-        elif tx_ticket.data_type == DataType.BEACON:
+        elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data Delete
             sql = f"""
             DELETE FROM Beacon
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
-        elif tx_ticket.data_type == DataType.PRI_BEACON:
+        elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Delete
             sql = f"""
             DELETE FROM PRI_Beacon
             WHERE HEX(BeaconID) = '{tx_ticket.values.get('beacon_id')}' and
             HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
-        elif tx_ticket.data_type == DataType.ROUTER:
+        elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Delete
             sql = f"""
             DELETE FROM Router
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
-        elif tx_ticket.data_type == DataType.PRI_ROUTER:
+        elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Delete
             sql = f"""
             DELETE FROM PRI_Router
             WHERE HEX(RouterID) = '{tx_ticket.values.get('router_id')}' and
             HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
-        elif tx_ticket.data_type == DataType.POS_DATA:
+        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Delete
             sql = f"""
             DELETE FROM Pos_Data
             WHERE HEX(DeviceID) = '{tx_ticket.values.get('device_id')}' and
             HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
-        else:
+        else:  # Type Error
             print(f"DB Delete Data Type Error")
             rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type,
                                    [{"msg": "Data Type Error"}], False)
@@ -637,3 +640,28 @@ class DatabaseManagerSystem:
                 result = str_result
 
         return result
+
+    def startup(self):
+        while True:
+            now_task: DatabaseTX = self.tx_queue.get(block=True, timeout=None)
+
+            if now_task.access_type == AccessType.REQUEST:
+                return_ticket = self.db_request(now_task)
+            elif now_task.access_type == AccessType.REGISTER:
+                return_ticket = self.db_register(now_task)
+            elif now_task.access_type == AccessType.UPDATE:
+                return_ticket = self.db_update(now_task)
+            elif now_task.access_type == AccessType.DELETE:
+                return_ticket = self.db_delete(now_task)
+            else:
+                return_ticket = DatabaseRX(now_task.key, now_task.data_type, [{"msg": "Access Error"}], False)
+
+            self.rx_queue.put(return_ticket, block=True, timeout=None)
+
+    def wait_to_return(self, ticket_key: str) -> DatabaseRX:
+        while True:
+            with self.lock:
+                if self.rx_key_list[0] == ticket_key:
+                    data_task: DatabaseRX = self.rx_queue.get(block=True, timeout=None)
+                    self.rx_key_list.remove(0)
+                    return data_task

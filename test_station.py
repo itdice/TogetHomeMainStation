@@ -12,7 +12,7 @@ app = socketio.WSGIApp(sio)
 
 
 @sio.event
-def connect(sid, environ):
+def connect(sid):
     print("--------------------------------------------")
     print(f"Client [{sid}] Connected!!!")
     print("--------------------------------------------")
