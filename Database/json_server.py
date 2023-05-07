@@ -18,10 +18,10 @@ position_connector = position_export_manager.PositionManagerSystem()
 @app.route("/position.json")
 def position_json():
     str_data = position_connector.get()  # Request Position Data
-    json_data = json.dumps(str_data, ensure_ascii=False, indent=4)
+    json_data = json.dumps(str_data, ensure_ascii=False, indent='\t')
     web_data = flask.make_response(json_data)
     return web_data
 
 
 if __name__ == '__main__':
-    sio.run(app, host='0.0.0.0', port=8712, debug=True)
+    sio.run(app, host='0.0.0.0', port=8712, debug=False)
