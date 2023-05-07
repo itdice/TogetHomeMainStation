@@ -44,6 +44,7 @@ create table Beacon
     isPrimary tinyint(1) not null,
     constraint Beacon_Space_ID_fk
         foreign key (SpaceID) references Space (ID)
+            on delete cascade
 )
     comment 'Toget Home Beacon Data';
 
@@ -55,9 +56,11 @@ create table PRI_Beacon
     Max_RSSI int       null,
     primary key (BeaconID, SpaceID),
     constraint PRI_Beacon_Beacon_ID_fk
-        foreign key (BeaconID) references Beacon (ID),
+        foreign key (BeaconID) references Beacon (ID)
+            on delete cascade,
     constraint PRI_Beacon_Space_ID_fk
         foreign key (SpaceID) references Space (ID)
+            on delete cascade
 )
     comment 'Primary Beacon RSSI Data';
 
@@ -69,9 +72,11 @@ create table PRI_Router
     Max_RSSI int       null,
     primary key (RouterID, SpaceID),
     constraint PRI_Router_Router_ID_fk
-        foreign key (RouterID) references Router (ID),
+        foreign key (RouterID) references Router (ID)
+            on delete cascade,
     constraint PRI_Router_Space_ID_fk
         foreign key (SpaceID) references Space (ID)
+            on delete cascade
 )
     comment 'Primary Router RSSI Data';
 
@@ -92,6 +97,7 @@ create table Device
     UserID        binary(6)   not null,
     constraint Device_User_ID_fk
         foreign key (UserID) references User (ID)
+            on delete cascade
 )
     comment 'Client Device Data';
 
@@ -103,11 +109,12 @@ create table Pos_Data
     Pos_X     float                                 null,
     Pos_Y     float                                 null,
     Data_time timestamp default current_timestamp() not null on update current_timestamp(),
-    constraint Position_Device_ID_fk
-        foreign key (DeviceID) references Device (ID),
-    constraint Position_Space_ID_fk
+    constraint Pos_Data_Device_ID_fk
+        foreign key (DeviceID) references Device (ID)
+            on delete cascade,
+    constraint Pos_Data_Space_ID_fk
         foreign key (SpaceID) references Space (ID)
+            on delete cascade
 )
     comment 'Device Position Data';
-
 
