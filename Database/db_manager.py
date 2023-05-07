@@ -124,7 +124,6 @@ class DatabaseManagerSystem:
         cursor = connection.cursor()
 
         if tx_ticket.data_type == DataType.HOME:  # Home Data DB Request with No Option
-
             sql = "SELECT Home_name, Interval_time, Expire_count FROM Home"
 
             count = cursor.execute(sql)
@@ -138,7 +137,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Request with No Option
-
             sql = "SELECT HEX(ID), Familiar_name, Size_X, Size_Y FROM Space"
 
             count = cursor.execute(sql)
@@ -156,7 +154,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.USER:  # User Data DB Request with No Option
-
             sql = "SELECT HEX(ID), User_name FROM User"
 
             count = cursor.execute(sql)
@@ -222,7 +219,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Request with No Option
-
             sql = "SELECT HEX(BeaconID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Beacon"
 
             count = cursor.execute(sql)
@@ -240,7 +236,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Request with No Option
-
             sql = "SELECT HEX(ID), SSID, MAC FROM Router"
 
             count = cursor.execute(sql)
@@ -257,7 +252,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Request with No Option
-
             sql = "SELECT HEX(RouterID), HEX(SpaceID), Min_RSSI, Max_RSSI FROM PRI_Router"
 
             count = cursor.execute(sql)
@@ -275,7 +269,6 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Request with No Option
-
             sql = "SELECT HEX(DeviceID), HEX(SpaceID), Pos_X, Pos_Y FROM Pos_Data"
 
             count = cursor.execute(sql)
@@ -424,7 +417,6 @@ class DatabaseManagerSystem:
         cursor = connection.cursor()
 
         if tx_ticket.data_type == DataType.HOME:  # Home Setting Data Update
-
             sql = f"""
             UPDATE Home
             SET Interval_time = {tx_ticket.values.get('interval_time')},
@@ -432,7 +424,6 @@ class DatabaseManagerSystem:
             WHERE Home_name = '{tx_ticket.values.get('home_name')}'
             """
         elif tx_ticket.data_type == DataType.SPACE:  # Space Size Update
-
             sql = f"""
             UPDATE Space
             SET Size_X = {tx_ticket.values.get('size_x')},
@@ -440,21 +431,18 @@ class DatabaseManagerSystem:
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.USER:  # User Name Update
-
             sql = f"""
             UPDATE User
             SET User_name = '{tx_ticket.values.get('user_name')}'
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.DEVICE:  # Device State Update
-
             sql = f"""
             UPDATE Device
             SET State = UNHEX({tx_ticket.values.get('state')})
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon State or Power Update
-
             if tx_ticket.values.get('state') is not None and tx_ticket.values.get('isprimary') is None:
                 sql = f"""
                 UPDATE Beacon
@@ -473,7 +461,6 @@ class DatabaseManagerSystem:
                                        [{"msg": "Beacon Update Value Error"}], False)
                 return rx_ticket
         elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Value Update
-
             sql = f"""
             UPDATE PRI_Beacon
             SET Min_RSSI = {tx_ticket.values.get('min_rssi')},
@@ -488,7 +475,6 @@ class DatabaseManagerSystem:
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Value Update
-
             sql = f"""
             UPDATE PRI_Router
             SET Min_RSSI = {tx_ticket.values.get('min_rssi')},
@@ -497,7 +483,6 @@ class DatabaseManagerSystem:
             HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
         elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Update
-
             sql = f"""
             UPDATE Pos_Data
             SET SpaceID = UNHEX('{tx_ticket.values.get('space_id')}'),
@@ -531,34 +516,73 @@ class DatabaseManagerSystem:
                                          password=self.password, db=self.db, charset=self.charset)
         except pymysql.err.OperationalError as e:
             code, msg = e.args
-            print(f"DB Register Connect ERROR[{code}] : {msg}")
+            print(f"DB Delete Connect ERROR[{code}] : {msg}")
             rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, [{"msg": "Connection Fail"}], False)
             return rx_ticket
 
         cursor = connection.cursor()
 
-        if tx_ticket.data_type == DataType.HOME:
-            pass
+        if tx_ticket.data_type == DataType.HOME:  # Home Data Delete
+            sql = f"""
+            DELETE FROM Home
+            WHERE Home_name = '{tx_ticket.values.get('home_name')}'
+            """
         elif tx_ticket.data_type == DataType.SPACE:
-            pass
+            sql = f"""
+            DELETE FROM Space
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            """
         elif tx_ticket.data_type == DataType.USER:
-            pass
+            sql = f"""
+            DELETE FROM User
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            """
         elif tx_ticket.data_type == DataType.DEVICE:
-            pass
+            sql = f"""
+            DELETE FROM Device
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            """
         elif tx_ticket.data_type == DataType.BEACON:
-            pass
+            sql = f"""
+            DELETE FROM Beacon
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            """
         elif tx_ticket.data_type == DataType.PRI_BEACON:
-            pass
+            sql = f"""
+            DELETE FROM PRI_Beacon
+            WHERE HEX(BeaconID) = '{tx_ticket.values.get('beacon_id')}' and
+            HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
+            """
         elif tx_ticket.data_type == DataType.ROUTER:
-            pass
+            sql = f"""
+            DELETE FROM Router
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+            """
         elif tx_ticket.data_type == DataType.PRI_ROUTER:
-            pass
+            sql = f"""
+            DELETE FROM PRI_Router
+            WHERE HEX(RouterID) = '{tx_ticket.values.get('router_id')}' and
+            HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
+            """
         elif tx_ticket.data_type == DataType.POS_DATA:
-            pass
+            sql = f"""
+            DELETE FROM Pos_Data
+            WHERE HEX(DeviceID) = '{tx_ticket.values.get('device_id')}' and
+            HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
+            """
         else:
-            print(f"DB Register Data Type Error")
+            print(f"DB Delete Data Type Error")
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type,
+                                   [{"msg": "Data Type Error"}], False)
+            return rx_ticket
+
+        count = cursor.execute(sql)
+        if count is 1:
+            response_valid = True
+            response_values = [{"msg": "Delete Success"}]
+        else:
             response_valid = False
-            response_values = [{"msg": "Data Type Error"}]
+            response_values = [{"msg": "Delete Failed"}]
 
         connection.commit()
         connection.close()
