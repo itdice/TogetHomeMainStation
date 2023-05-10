@@ -136,6 +136,12 @@ def device_register(sid, data: dict):
         if check_rx_ticket.valid is True:  # Device ID exists in DB
             pass  # Todo Active Session Function Required
 
+    # Device ID does not exist in DB or Device ID has not been received
+    input_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER, db_manager.DataType.DEVICE, data)
+    db_tx_queue.put(input_tx_ticket)
+    input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
+
+    pass  # Todo Active Session Function Required
 
 
 if __name__ == '__main__':
