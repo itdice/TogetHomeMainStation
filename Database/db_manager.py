@@ -172,12 +172,19 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Request with UserID Option
+        elif tx_ticket.data_type == DataType.DEVICE:  # Device Data DB Request with DeviceID and UserID Option
+            device_id_option = tx_ticket.values.get("id")
             user_id_option = tx_ticket.values.get("user_id")
 
             sql = "SELECT HEX(ID), Familiar_name, HEX(State), HEX(UserID) FROM Device"
-            if user_id_option is not None:
+            if device_id_option is not None and user_id_option is None:
+                sql += f" WHERE HEX(ID) = '{device_id_option}'"
+            elif device_id_option is None and user_id_option is not None:
                 sql += f" WHERE HEX(UserID) = '{user_id_option}'"
+            elif device_id_option is None and user_id_option is None:
+                sql += f" WHERE HEX(ID) = '{device_id_option}' AND HEX(UserID) = '{user_id_option}'"
+            else:
+                sql += f""
 
             count = cursor.execute(sql)
             if count > 0:
@@ -202,8 +209,10 @@ class DatabaseManagerSystem:
                 sql += f" WHERE isPrimary = {isprimary_option}"
             elif space_id_option is not None and isprimary_option is None:
                 sql += f" WHERE HEX(SpaceID) = '{space_id_option}'"
-            else:
+            elif space_id_option is not None and isprimary_option is not None:
                 sql += f" WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
+            else:
+                sql += f""
 
             count = cursor.execute(sql)
             if count > 0:
