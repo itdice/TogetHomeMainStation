@@ -73,13 +73,29 @@ def test_request(sid):
     print("--------------------------------------------------------------")
 
 
-@sio.on("data_register")
-def home_setup(sid, data):
+@sio.on("home_setup")  # Home Data Setup
+def home_setup(sid, data: dict):
     print("--------------------------------------------------------------")
     print(f"Client [{sid}] Request Data Register with...")
     print(f"Data = {data}")
 
-    # To Do
+    # Check for existing Home Data
+    check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.HOME, {})
+    db_tx_queue.put(check_tx_ticket)
+    check_rx_ticket = db_connector.wait_to_return(check_tx_ticket.key)
+
+    # If Home Data is not available, register as Received Data
+    if check_rx_ticket.valid is False:
+        input_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER, db_manager.DataType.HOME, data)
+        db_tx_queue.put(input_tx_ticket)
+        input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
+        response_values: dict = input_rx_ticket.values[0]
+    else:
+        response_values: dict = check_rx_ticket.values[0]
+
+    # Answer the results of the Home data registration
+    # response_values >> home_name[str], interval_time[int], expire_count[int]
+    sio.emit('home_setup_response', response_values, room=sid)
 
 
 if __name__ == '__main__':
