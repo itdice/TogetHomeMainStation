@@ -26,6 +26,9 @@ db_thread = threading.Thread(target=db_connector.startup, args=())
 db_thread.daemon = True
 db_thread.start()
 
+# Active Session Part
+device_session = set()
+
 
 @sio.event
 def connect(sid, environ):
@@ -76,8 +79,8 @@ def test_request(sid):
 @sio.on("home_setup")  # Home Data Setup
 def home_setup(sid, data: dict):
     print("--------------------------------------------------------------")
-    print(f"Client [{sid}] Request Data Register with...")
-    print(f"Data = {data}")
+    print(f"Client [{sid}] Home Setup Data Register with...")
+    print(f"Data = {data}")  # data >> home_name[str]
 
     # Check for existing Home Data
     check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.HOME, {})
@@ -89,13 +92,50 @@ def home_setup(sid, data: dict):
         input_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER, db_manager.DataType.HOME, data)
         db_tx_queue.put(input_tx_ticket)
         input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
-        response_values: dict = input_rx_ticket.values[0]
+        if input_rx_ticket.valid is True:  # Home Data registration successful
+            recheck_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.HOME, {})
+            db_tx_queue.put(recheck_tx_ticket)
+            recheck_rx_ticket = db_connector.wait_to_return(recheck_tx_ticket.key)
+            response_values: dict = recheck_rx_ticket.values[0]
+            response_values["valid"] = recheck_rx_ticket.valid
+        else:  # Home Data registration failed
+            response_values: dict = input_rx_ticket.values[0]
+            response_values["valid"] = input_rx_ticket.valid
     else:
         response_values: dict = check_rx_ticket.values[0]
+        response_values["valid"] = check_rx_ticket.valid
+
+    print(f"Response to Client [{sid}] Home Setup Register with...")
+    print(f"Data = {response_values}")
 
     # Answer the results of the Home data registration
     # response_values >> home_name[str], interval_time[int], expire_count[int]
     sio.emit('home_setup_response', response_values, room=sid)
+    print("--------------------------------------------------------------")
+
+
+@sio.on("data_register")  # DB Data Register
+def data_register(sid, data: dict):
+    pass  # Todo DB Registration Function except Home and Device
+
+
+@sio.on("device_register")  # Device Session & Data Register
+def device_register(sid, data: dict):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] Device Session & Data Register with...")
+    print(f"Data = {data}")  # data >> id[option,str], familiar_name[str], user_id[str]
+
+    device_id_option = data.get('id')
+
+    # Check for existing Device Data
+    if device_id_option is not None:
+        check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.DEVICE,
+                                                {"id": device_id_option})
+        db_tx_queue.put(check_tx_ticket)
+        check_rx_ticket = db_connector.wait_to_return(check_tx_ticket.key)
+        if check_rx_ticket.valid is True:  # Device ID exists in DB
+            pass  # Todo Active Session Function Required
+
 
 
 if __name__ == '__main__':
