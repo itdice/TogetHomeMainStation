@@ -319,7 +319,7 @@ class DatabaseManagerSystem:
             sql = f"""
             INSERT INTO Home(Home_name, Interval_time, Expire_count)
             VALUES ('{tx_ticket.values.get('home_name', 'Empty')}',
-            {tx_ticket.values.get('interval_time')}, {tx_ticket.values.get('expire_count')})"""
+            {tx_ticket.values.get('interval_time', 60)}, {tx_ticket.values.get('expire_count', 5)})"""
         elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Register
             registered_id = self.new_id(DataType.SPACE)
 
@@ -544,7 +544,7 @@ class DatabaseManagerSystem:
         elif tx_ticket.data_type == DataType.DEVICE:  # Device Data Delete
             sql = f"""
             DELETE FROM Device
-            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'가
+            WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data Delete
             sql = f"""
@@ -658,12 +658,14 @@ class DatabaseManagerSystem:
                 return_ticket = DatabaseRX(now_task.key, now_task.data_type, [{"msg": "Access Error"}], False)
 
             self.rx_queue.put(return_ticket)
+            self.rx_key_list.append(return_ticket.key)
 
     def wait_to_return(self, ticket_key: str) -> DatabaseRX:
         while True:
-            with self.lock:
-                if self.rx_key_list[0] == ticket_key:
-                    data_task: DatabaseRX = self.rx_queue.get()
-                    self.rx_key_list.remove(0)
-                    return data_task
-                time.sleep(0.01)
+            if len(self.rx_key_list) > 0:
+                with self.lock:
+                    if self.rx_key_list[0] == ticket_key:
+                        data_task: DatabaseRX = self.rx_queue.get()
+                        self.rx_key_list.pop(0)
+                        return data_task
+                    time.sleep(0.01)

@@ -51,9 +51,14 @@ def test_send(sid, data):
 
 @sio.on("test_request")
 def test_request(sid):
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
     print(f"Client [{sid}] request Test Data!!!")
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
+
+    tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.DEVICE, {})
+    db_tx_queue.put(tx_ticket.key)
+    rx_ticket = db_connector.wait_to_return(tx_ticket.key)
+    rx_ticket.description()
 
     floatdata = 1.23456789
 
@@ -63,9 +68,18 @@ def test_request(sid):
                                "float": floatdata
                                }, room=sid)
 
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
     print(f"Test Data Send to Client [{sid}]")
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
+
+
+@sio.on("data_register")
+def home_setup(sid, data):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] Request Data Register with...")
+    print(f"Data = {data}")
+
+    # To Do
 
 
 if __name__ == '__main__':
