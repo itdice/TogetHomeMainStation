@@ -181,7 +181,7 @@ class DatabaseManagerSystem:
                 sql += f" WHERE HEX(ID) = '{device_id_option}'"
             elif device_id_option is None and user_id_option is not None:
                 sql += f" WHERE HEX(UserID) = '{user_id_option}'"
-            elif device_id_option is None and user_id_option is None:
+            elif device_id_option is not None and user_id_option is not None:
                 sql += f" WHERE HEX(ID) = '{device_id_option}' AND HEX(UserID) = '{user_id_option}'"
             else:
                 sql += f""

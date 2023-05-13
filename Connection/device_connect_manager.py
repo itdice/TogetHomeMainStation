@@ -58,10 +58,14 @@ def test_request(sid):
     print(f"Client [{sid}] request Test Data!!!")
     print("--------------------------------------------------------------")
 
-    tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.DEVICE, {})
-    db_tx_queue.put(tx_ticket.key)
-    rx_ticket = db_connector.wait_to_return(tx_ticket.key)
-    rx_ticket.description()
+    table_list = [db_manager.DataType.HOME, db_manager.DataType.USER, db_manager.DataType.SPACE,
+                  db_manager.DataType.BEACON, db_manager.DataType.DEVICE]
+
+    for cir in table_list:
+        tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, cir, {})
+        db_tx_queue.put(tx_ticket)
+        rx_ticket = db_connector.wait_to_return(tx_ticket.key)
+        rx_ticket.description()
 
     floatdata = 1.23456789
 
