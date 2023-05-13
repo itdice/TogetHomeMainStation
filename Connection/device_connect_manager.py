@@ -67,7 +67,7 @@ def test_request(sid):
         rx_ticket = db_connector.wait_to_return(tx_ticket.key)
         rx_ticket.description()
 
-    floatdata = 1.23456789
+    floatdata = 1.23456780
 
     sio.emit('test_response', {'message': 'Test connection from Server',
                                "hex": 0xAABBCCDDEEFF,
