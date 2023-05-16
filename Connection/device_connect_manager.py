@@ -42,6 +42,9 @@ def connect(sid, environ):
 def disconnect(sid):
     print("--------------------------------------------")
     print(f"Client [{sid}] Disconnected!!!")
+    response_values: dict = active_connector.device_disconnect(sid)
+    print(f"Result of Client [{sid}] Device Disconnected with...")
+    print(f"Data = {response_values}")
     print("--------------------------------------------")
 
 
@@ -140,7 +143,13 @@ def device_register(sid, data: dict):
         check_rx_ticket = db_connector.wait_to_return(check_tx_ticket.key)
         if check_rx_ticket.valid is True:  # Device ID exists in DB
             response_values: dict = active_connector.device_connect(sid, device_id_option)
+            print(f"Response to Client [{sid}] Device Register with...")
+            print(f"Data = {response_values}")
+
+            # Answer the results of the Device data registration
+            # response_values >> msg[str], valid[bool]
             sio.emit('device_register_response', response_values, room=sid)
+            print("--------------------------------------------------------------")
             return None
 
     # Device ID does not exist in DB or Device ID has not been received
@@ -152,12 +161,25 @@ def device_register(sid, data: dict):
     input_response_values["valid"] = input_rx_ticket.valid
     registered_id = input_response_values.get("id")
 
-    if registered_id is not None:
+    if registered_id is not None:  # If the reply message has a newly registered ID
         response_values: dict = active_connector.device_connect(sid, registered_id)
+        print(f"Response to Client [{sid}] Device Register with...")
+        print(f"Data = {response_values}")
+
+        # Answer the results of the Device data registration
+        # response_values >> msg[str], valid[bool]
         sio.emit('device_register_response', response_values, room=sid)
+        print("--------------------------------------------------------------")
         return None
     else:
+        print(f"Response to Client [{sid}] Device Register with...")
+        print(f"Data = {input_response_values}")
+
+        # Answer the results of the Device data registration
+        # response_values >> msg[str], valid[bool]
         sio.emit('device_register_response', input_response_values, room=sid)
+        print("--------------------------------------------------------------")
+        return None
 
 
 @sio.on("data_register")  # DB Data Register
