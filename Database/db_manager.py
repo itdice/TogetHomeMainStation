@@ -50,6 +50,17 @@ class TypeDescription:
         DataType.PRI_ROUTER: "Primary Router",
         DataType.POS_DATA: "Position Data"
     }
+    re_data = {
+        "Home": DataType.HOME,
+        "Space": DataType.SPACE,
+        "User": DataType.USER,
+        "Device": DataType.DEVICE,
+        "Beacon": DataType.BEACON,
+        "Primary Beacon": DataType.PRI_BEACON,
+        "Router": DataType.ROUTER,
+        "Primary Router": DataType.PRI_ROUTER,
+        "Position Data": DataType.POS_DATA
+    }
 
 
 class DatabaseTX:  # Tickets containing information to send requests to the database

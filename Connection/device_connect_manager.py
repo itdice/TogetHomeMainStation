@@ -86,7 +86,25 @@ def test_request(sid):
 
 @sio.on("data_request")  # DB Data Request
 def data_request(sid, data: dict):
-    pass  # Todo DB Request Function
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] Data Request with...")
+    print(f"Data = {data}")  # data >> data_type[str], `id[str], `user_id[str], `space_id[str], `isprimary[bool]
+
+    data_type_str = data.get("data_type")
+    data_type: db_manager.DataType = db_manager.TypeDescription.re_data.get(data_type_str)
+
+    request_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, data_type, data)
+    db_tx_queue.put(request_tx_ticket)
+    request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
+
+    response_list: list = request_rx_ticket.values
+    print(f"Response to Client [{sid}] Request Data with...")
+    print(f"Data = {response_list}")
+
+    # Answer the results of DB Requests
+    # response_values >> Answers in list form, different result values for each data type
+    sio.emit('data_response', response_list, room=sid)
+    print("--------------------------------------------------------------")
 
 
 @sio.on("home_setup")  # Home Data Setup
@@ -131,7 +149,7 @@ def home_setup(sid, data: dict):
 def device_register(sid, data: dict):
     print("--------------------------------------------------------------")
     print(f"Client [{sid}] Device Session & Data Register with...")
-    print(f"Data = {data}")  # data >> id[option,str], familiar_name[str], user_id[str]
+    print(f"Data = {data}")  # data >> `id[str], familiar_name[str], user_id[str]
 
     device_id_option = data.get('id')
 
