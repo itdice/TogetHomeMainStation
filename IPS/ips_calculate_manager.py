@@ -69,7 +69,9 @@ class IPSManager:
         return rssi_cal_data
 
     def distance(self, rssi: np.ndarray, preset: np.ndarray):
-        rssi_cal_data = np.array([rssi.mean(axis=1), rssi.max(axis=1), rssi.min(axis=1)]).T
+        rssi_cal_data = np.array([rssi.mean(axis=1),
+                                  rssi.max(axis=1, initial=-120),
+                                  rssi.min(axis=1, initial=-120)]).T
 
         upper_avg = preset[:, 0] - rssi_cal_data[:, 0]
         upper_max = preset[:, 0] - rssi_cal_data[:, 1]
