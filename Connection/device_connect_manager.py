@@ -67,7 +67,7 @@ def test_request(sid):
         rx_ticket = db_connector.wait_to_return(tx_ticket.key)
         rx_ticket.description()
 
-    floatdata = 1.23456780
+    floatdata = 1.2345678
 
     sio.emit('test_response', {'message': 'Test connection from Server',
                                "hex": 0xAABBCCDDEEFF,
@@ -78,6 +78,11 @@ def test_request(sid):
     print("--------------------------------------------------------------")
     print(f"Test Data Send to Client [{sid}]")
     print("--------------------------------------------------------------")
+
+
+@sio.on("data_request")  # DB Data Request
+def data_request(sid, data: dict):
+    pass  # Todo DB Request Function
 
 
 @sio.on("home_setup")  # Home Data Setup
@@ -118,11 +123,6 @@ def home_setup(sid, data: dict):
     print("--------------------------------------------------------------")
 
 
-@sio.on("data_register")  # DB Data Register
-def data_register(sid, data: dict):
-    pass  # Todo DB Registration Function except Home and Device
-
-
 @sio.on("device_register")  # Device Session & Data Register
 def device_register(sid, data: dict):
     print("--------------------------------------------------------------")
@@ -146,6 +146,21 @@ def device_register(sid, data: dict):
     input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
 
     pass  # Todo Active Session Function Required
+
+
+@sio.on("data_register")  # DB Data Register
+def data_register(sid, data: dict):
+    pass  # Todo DB Registration Function except Home and Device
+
+
+@sio.on("data_update")  # DB Data Update
+def data_update(sid, data: dict):
+    pass  # Todo DB Update Function
+
+
+@sio.on("data_remove")  # DB Data Remove
+def data_remove(sid, data: dict):
+    pass  # Todo DB Remove Function
 
 
 if __name__ == '__main__':
