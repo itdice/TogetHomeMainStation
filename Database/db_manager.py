@@ -202,7 +202,7 @@ class DatabaseManagerSystem:
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Request with SpaceID and isPrimary Option
             space_id_option = tx_ticket.values.get("space_id")
-            isprimary_option = tx_ticket.values.get("isprimary")
+            isprimary_option = bool(tx_ticket.values.get("isprimary"))
 
             sql = "SELECT HEX(ID), HEX(State), HEX(SpaceID), Pos_X, Pos_Y, Power, isPrimary FROM Beacon"
             if space_id_option is None and isprimary_option is not None:
@@ -226,7 +226,7 @@ class DatabaseManagerSystem:
                                  "pos_x": cube_data[3],
                                  "pos_y": cube_data[4],
                                  "power": cube_data[5],
-                                 "isprimary": cube_data[6]}
+                                 "isprimary": bool(cube_data[6])}
                     response_values.append(temp_data)
             else:
                 response_valid = False
