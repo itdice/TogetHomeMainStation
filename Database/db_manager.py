@@ -452,20 +452,20 @@ class DatabaseManagerSystem:
         elif tx_ticket.data_type == DataType.DEVICE:  # Device State Update
             sql = f"""
             UPDATE Device
-            SET State = UNHEX({tx_ticket.values.get('state')})
+            SET State = UNHEX('{tx_ticket.values.get('state')}')
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon State or Power Update
             if tx_ticket.values.get('state') is not None and tx_ticket.values.get('isprimary') is None:
                 sql = f"""
                 UPDATE Beacon
-                SET State = UNHEX({tx_ticket.values.get('state')})
+                SET State = UNHEX('{tx_ticket.values.get('state')}')
                 WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
                 """
             elif tx_ticket.values.get('state') is None and tx_ticket.values.get('isprimary') is not None:
                 sql = f"""
                 UPDATE Beacon
-                SET State = {bool(tx_ticket.values.get('isprimary'))}
+                SET isPrimary = {bool(tx_ticket.values.get('isprimary'))}
                 WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
                 """
             else:
