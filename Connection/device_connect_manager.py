@@ -13,6 +13,7 @@ from queue import Queue
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))  # Master Path Finder
 from Database import db_manager
+from Connection import active_session_manager
 
 # Device Connect Part
 sio = socketio.Server(async_mode="eventlet")
@@ -27,7 +28,7 @@ db_thread.daemon = True
 db_thread.start()
 
 # Active Session Part
-device_session = set()
+active_connector = active_session_manager.StateManagerSystem(db_tx_queue, db_rx_queue, db_connector)
 
 
 @sio.event
@@ -138,14 +139,25 @@ def device_register(sid, data: dict):
         db_tx_queue.put(check_tx_ticket)
         check_rx_ticket = db_connector.wait_to_return(check_tx_ticket.key)
         if check_rx_ticket.valid is True:  # Device ID exists in DB
-            pass  # Todo Active Session Function Required
+            response_values: dict = active_connector.device_connect(sid, device_id_option)
+            sio.emit('device_register_response', response_values, room=sid)
+            return None
 
     # Device ID does not exist in DB or Device ID has not been received
     input_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER, db_manager.DataType.DEVICE, data)
     db_tx_queue.put(input_tx_ticket)
     input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
 
-    pass  # Todo Active Session Function Required
+    input_response_values: dict = input_rx_ticket.values[0]
+    input_response_values["valid"] = input_rx_ticket.valid
+    registered_id = input_response_values.get("id")
+
+    if registered_id is not None:
+        response_values: dict = active_connector.device_connect(sid, registered_id)
+        sio.emit('device_register_response', response_values, room=sid)
+        return None
+    else:
+        sio.emit('device_register_response', input_response_values, room=sid)
 
 
 @sio.on("data_register")  # DB Data Register
