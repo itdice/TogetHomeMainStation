@@ -103,7 +103,7 @@ def data_request(sid, data: dict):
 
     # Answer the results of DB Requests
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_request_response', response_list, room=sid)
+    sio.emit('data_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -219,7 +219,7 @@ def data_register(sid, data: dict):
 
     # Answer the results of DB Register
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_request_response', response_list, room=sid)
+    sio.emit('data_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -242,7 +242,7 @@ def data_update(sid, data: dict):
 
     # Answer the results of DB Update
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_request_response', response_list, room=sid)
+    sio.emit('data_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -265,7 +265,7 @@ def data_delete(sid, data: dict):
 
     # Answer the results of DB Delete
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_request_response', response_list, room=sid)
+    sio.emit('data_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
