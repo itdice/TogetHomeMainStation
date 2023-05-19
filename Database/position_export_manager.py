@@ -29,7 +29,7 @@ class PositionManagerSystem:
         cursor = connection.cursor()
         key_list: list = ['device_id', 'device_name', 'device_state', 'space_id', 'space_name',
                           'space_size_x', 'space_size_y', 'pos_x', 'pos_y', 'data_time']
-        result_json_data: dict = {}
+        result_json_data: dict = {"device_data": []}
 
         sql = f"""
         SELECT HEX(DeviceID),
@@ -46,12 +46,15 @@ class PositionManagerSystem:
 
         count = cursor.execute(sql)
         if count > 0:
+            result_json_data["Valid"] = True
+            result_json_data["device_count"] = 0
             total_data = cursor.fetchall()
-            temp_key = 0
             for data in total_data:
-                result_json_data[temp_key] = dict(zip(key_list, data))
-                temp_key += 1
+                result_json_data["device_count"] += 1
+                result_json_data["device_data"].append(dict(zip(key_list, data)))
         else:
+            result_json_data["Valid"] = False
+            result_json_data["device_count"] = 0
             result_json_data["msg"] = "No Position Data"
 
         connection.commit()
