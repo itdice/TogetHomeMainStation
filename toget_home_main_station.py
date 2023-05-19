@@ -5,6 +5,7 @@
 # Created by IT DICE on 2023/04/30.
 #
 import subprocess
+import sys
 import threading
 
 
@@ -24,17 +25,17 @@ if __name__ == '__main__':
 
     # Subprocess Part
     subprocess_list = [
-        subprocess.Popen(["python", "Connection/device_connect_manager.py"],
-                         stdout=subprocess.STDOUT,
-                         stderr=subprocess.PIPE,
+        subprocess.Popen([sys.executable, "-u",  "Connection/device_connect_manager.py"],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True),
-        subprocess.Popen(["python", "Connection/external_connect_manager.py"],
-                         stdout=subprocess.STDOUT,
-                         stderr=subprocess.PIPE,
+        subprocess.Popen([sys.executable, "-u", "Connection/external_connect_manager.py"],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True),
-        subprocess.Popen(["python", "Database/json_server.py"],
-                         stdout=subprocess.STDOUT,
-                         stderr=subprocess.PIPE,
+        subprocess.Popen([sys.executable, "-u", "Database/json_server.py"],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True)
     ]
 
