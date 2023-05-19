@@ -70,6 +70,7 @@ def test_request(sid):
     print(f"Client [{sid}] request Test Data!!!")
     print("--------------------------------------------------------------")
 
+    """
     table_list = [db_manager.DataType.HOME, db_manager.DataType.USER, db_manager.DataType.SPACE,
                   db_manager.DataType.BEACON, db_manager.DataType.DEVICE]
 
@@ -78,6 +79,7 @@ def test_request(sid):
         db_tx_queue.put(tx_ticket)
         rx_ticket = db_connector.wait_to_return(tx_ticket.key)
         rx_ticket.description()
+    """
 
     sio.emit('test_response', {'message': 'Test connection from Server',
                                "hex": 0xAABBCCDDEEFF,
