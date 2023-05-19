@@ -15,7 +15,7 @@ def read_subprocess_output(_process: subprocess.Popen):
             print("kill")
             break
         if output:
-            print(output.decode().strip())
+            print(output, end='')
 
 
 if __name__ == '__main__':
