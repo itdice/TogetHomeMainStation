@@ -15,10 +15,10 @@ from Database import db_manager
 
 
 class IPSTX:
-    def __init__(self, device_id: str, space_id: str, beacon_list: list):
+    def __init__(self, device_id: str, space_id: str, beacon_rssi_data: list):
         self.device_id = device_id
         self.space_id = space_id
-        self.beacon_list = beacon_list
+        self.beacon_rssi_data = beacon_rssi_data  # beacon_rssi_data >> {id[str], state[str], rssi[list]}
         self.beacon_preset_data: dict = {}
 
 
@@ -116,10 +116,7 @@ class IPSManager:
 
         return result_pos
 
-    def startup(self):
-        pass  # Todo Developing IPS Calculation Operations
-
-    def space_calculate(self, beacon_list: list) -> str:  # beacon_list >> {id[str], state[str], rssi[list]}
+    def space_calculate(self, beacon_rssi_data: list) -> str:  # beacon_rssi_data >> {id[str], state[str], rssi[list]}
         request_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.PRI_BEACON, {})
         self.db_tx_queue.put(request_tx_ticket)
         request_rx_ticket = self.db_connector.wait_to_return(request_tx_ticket.key)
@@ -131,13 +128,13 @@ class IPSManager:
         pri_beacon_data: list = request_rx_ticket.values  # pri_beacon_data >> {beacon_id, space_id, min_rssi, max_rssi}
         space_data: dict = {}  # Space Weight Value
 
-        for one_beacon in beacon_list:
+        for one_beacon in beacon_rssi_data:
             cur_beacon_id: str = one_beacon.get('id')
             cur_raw_beacon_rssi: list = one_beacon.get('rssi')
 
-            cur_pac_beacon_rssi: np.ndarray = np.array([cur_raw_beacon_rssi])
-            cur_fil_beacon_rssi: np.ndarray = self.linear_calibration(cur_pac_beacon_rssi)
-            cur_mean_beacon_rssi: int = round(cur_fil_beacon_rssi.mean(axis=1)[0])
+            cur_beacon_pac_rssi: np.ndarray = np.array([cur_raw_beacon_rssi])
+            cur_beacon_fil_rssi: np.ndarray = self.linear_calibration(cur_beacon_pac_rssi)
+            cur_beacon_mean_rssi: int = round(cur_beacon_fil_rssi.mean(axis=1)[0])
 
             for one_pri_beacon in pri_beacon_data:
                 pri_beacon_id: str = one_pri_beacon.get('beacon_id')
@@ -150,10 +147,10 @@ class IPSManager:
                     space_data[pri_space_id] = 0
 
                 if pri_beacon_id == cur_beacon_id:
-                    if pri_min_rssi <= cur_mean_beacon_rssi <= pri_max_rssi:  # within range
-                        space_data[pri_space_id] += abs(cur_mean_beacon_rssi - pri_mean_rssi)
+                    if pri_min_rssi <= cur_beacon_mean_rssi <= pri_max_rssi:  # within range
+                        space_data[pri_space_id] += abs(cur_beacon_mean_rssi - pri_mean_rssi)
                     else:
-                        space_data[pri_space_id] += 2 * abs(cur_mean_beacon_rssi - pri_mean_rssi)
+                        space_data[pri_space_id] += 2 * abs(cur_beacon_mean_rssi - pri_mean_rssi)
 
         # Output the least weighted Space ID and value
         min_weight_space = min(space_data.items(), key=operator.itemgetter(1))
@@ -186,3 +183,60 @@ class IPSManager:
         response_values: dict = {"msg": "Successfully inserted beacon location information into ticket",
                                  "valid": True}
         return response_values
+
+    def startup(self):
+        while True:
+            now_task: IPSTX = self.ips_queue.get(block=True, timeout=None)
+
+            if len(now_task.beacon_preset_data) != 0:  # If Beacon location information exists on the ticket
+                beacon_pos: list = []
+                beacon_power: list = []
+                beacon_raw_rssi: list = []
+
+                for one_beacon in now_task.beacon_rssi_data:
+                    beacon_id: str = one_beacon.get("id")
+                    beacon_rssi: list = one_beacon.get("rssi")
+
+                    cur_beacon_prest_data: dict = now_task.beacon_preset_data.get(beacon_id)
+                    pos_x: float = cur_beacon_prest_data.get("pos_x")
+                    pos_y: float = cur_beacon_prest_data.get("pos_y")
+                    power: int = cur_beacon_prest_data.get("power")
+
+                    beacon_pos.append([pos_x, pos_y])
+                    beacon_power.append([power])
+                    beacon_raw_rssi.append(beacon_rssi)
+
+                beacon_pos_pac: np.ndarray = np.array(beacon_pos)
+                beacon_power_pac: np.ndarray = np.array(beacon_power)
+                beacon_rssi_pac: np.ndarray = np.array(beacon_raw_rssi)
+                beacon_rssi_fil: np.ndarray = self.linear_calibration(beacon_rssi_pac)
+
+                calculated_pos: np.ndarray = self.position_calculate(beacon_rssi_fil, beacon_pos_pac,
+                                                                     beacon_power_pac, self.max_trust_distance)
+                response_values: dict = {"device_id": now_task.device_id, "space_id": now_task.space_id,
+                                         "pos_x": calculated_pos[0], "pos_y": calculated_pos[1]}
+
+                # Verify that the device already exists in the Position Information DB
+                check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.POS_DATA,
+                                                        {"device_id": now_task.device_id})
+                self.db_tx_queue.put(check_tx_ticket)
+                check_rx_ticket = self.db_connector.wait_to_return(check_tx_ticket.key)
+
+                if check_rx_ticket.valid is True:  # Position information for that device already exists
+                    # Update position information
+                    response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.UPDATE,
+                                                               db_manager.DataType.POS_DATA, response_values)
+                else:  # No position information for that device
+                    # Register position information
+                    response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER,
+                                                               db_manager.DataType.POS_DATA, response_values)
+
+                self.db_tx_queue.put(response_tx_ticket)
+                response_rx_ticket = self.db_connector.wait_to_return(response_tx_ticket.key)
+
+                if response_rx_ticket.valid is False:
+                    print(f"DeviceID : {now_task.device_id} IPS Data UPDATE ERROR")
+                else:
+                    print(f"DeviceID : {now_task.device_id} IPS Data UPDATE SUCCESS!!")
+            else:
+                print("Warning! The beacon location information has not been updated on the ticket.")

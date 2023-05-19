@@ -56,10 +56,11 @@ class StateManagerSystem:
         self.active_device_id: set = set()
         self.session_info: dict = {}
 
-    def beacon_state_update(self, beacon_list: list) -> bool:  # beacon_list >> {id[str], state[str], rssi[list]}
+    def beacon_state_update(self, beacon_rssi_data: list) -> bool:
+        # beacon_rssi_data >> {id[str], state[str], rssi[list]}
         result_list: list = []
 
-        for one_beacon in beacon_list:
+        for one_beacon in beacon_rssi_data:
             beacon_id: str = one_beacon.get('id')
             beacon_state: str = one_beacon.get('state')
 
