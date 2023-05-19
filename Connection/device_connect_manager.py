@@ -14,6 +14,7 @@ from queue import Queue
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))  # Master Path Finder
 from Database import db_manager
 from Connection import active_session_manager
+from IPS import ips_calculate_manager
 
 # Device Connect Part
 sio = socketio.Server(async_mode="eventlet")
@@ -29,6 +30,13 @@ db_thread.start()
 
 # Active Session Part
 active_connector = active_session_manager.StateManagerSystem(db_tx_queue, db_rx_queue, db_connector)
+
+# IPS Part
+ips_queue = Queue(maxsize=4096)
+ips_connector = ips_calculate_manager.IPSManager(ips_queue, db_tx_queue, db_rx_queue, db_connector)
+ips_thread = threading.Thread(target=ips_connector.startup, args=())
+ips_thread.daemon = True
+ips_thread.start()
 
 
 @sio.event
@@ -71,12 +79,10 @@ def test_request(sid):
         rx_ticket = db_connector.wait_to_return(tx_ticket.key)
         rx_ticket.description()
 
-    floatdata = 1.2345678
-
     sio.emit('test_response', {'message': 'Test connection from Server',
                                "hex": 0xAABBCCDDEEFF,
                                "int": 123456789,
-                               "float": floatdata
+                               "float": 1.2345678
                                }, room=sid)
 
     print("--------------------------------------------------------------")
@@ -103,7 +109,7 @@ def data_request(sid, data: dict):
 
     # Answer the results of DB Requests
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_response', response_list, room=sid)
+    sio.emit('data_request_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -189,7 +195,7 @@ def device_register(sid, data: dict):
         sio.emit('device_register_response', response_values, room=sid)
         print("--------------------------------------------------------------")
         return None
-    else:
+    else:  # Device registration failed
         print(f"Response to Client [{sid}] Device Register with...")
         print(f"Data = {input_response_values}")
 
@@ -219,7 +225,7 @@ def data_register(sid, data: dict):
 
     # Answer the results of DB Register
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_response', response_list, room=sid)
+    sio.emit('data_register_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -242,7 +248,7 @@ def data_update(sid, data: dict):
 
     # Answer the results of DB Update
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_response', response_list, room=sid)
+    sio.emit('data_update_response', response_list, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -265,8 +271,29 @@ def data_delete(sid, data: dict):
 
     # Answer the results of DB Delete
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_response', response_list, room=sid)
+    sio.emit('data_delete_response', response_list, room=sid)
     print("--------------------------------------------------------------")
+
+
+@sio.on("ips_space")  # IPS Space Calculate Request
+def ips_space(sid, data: dict):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] IPS Space Calculate with...")
+    print(f"Data = {data}")  # data >> beacon_rssi_data[list]
+
+    beacon_rssi_data: list = data.get("beacon_rssi_data")
+    result_space_id: str = ips_connector.space_calculate(beacon_rssi_data)
+
+    if result_space_id == "FFFFFFFFFFFF":  # Space calculation failed
+        response_values: dict = {"msg": "Space calculation failed", "valid": False,
+                                 "space_id": result_space_id}
+    else:  # Space calculation successful
+        response_values: dict = {"msg": "Space calculation successful", "valid": True,
+                                 "space_id": result_space_id}
+
+    # Answer the results of the IPS Space Calculate
+    # response_values >> msg[str], valid[bool], space_id[str]
+    sio.emit('ips_space_response', response_values, room=sid)
 
 
 if __name__ == '__main__':
