@@ -16,7 +16,10 @@ from Database import db_manager
 
 class IPSTX:
     def __init__(self, device_id: str, space_id: str, beacon_list: list):
+        self.device_id = device_id
+        self.space_id = space_id
         self.beacon_list = beacon_list
+        self.beacon_preset_data: dict = {}
 
 
 class IPSManager:
@@ -157,3 +160,29 @@ class IPSManager:
         response_space_id: str = min_weight_space[0]
 
         return response_space_id
+
+    def ticket_pos_request(self, tx_ticket: IPSTX) -> dict:  # Insert beacon location information into the ticket
+        request_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.BEACON,
+                                                  {"space_id": tx_ticket.space_id})
+        self.db_tx_queue.put(request_tx_ticket)
+        request_rx_ticket = self.db_connector.wait_to_return(request_tx_ticket.key)
+
+        if request_rx_ticket.valid is False:  # Failed to receive Beacon information for Space ID.
+            response_values: dict = request_rx_ticket.values[0]
+            response_values["valid"] = request_rx_ticket.valid
+            return response_values
+
+        beacon_preset_data: list = request_rx_ticket.values
+
+        for one_pre_beacon in beacon_preset_data:
+            cur_beacon_id: str = one_pre_beacon.get("id")
+            cur_beacon_pos_x: float = one_pre_beacon.get("pos_x")
+            cur_beacon_pos_y: float = one_pre_beacon.get("pos_y")
+            cur_beacon_power: int = one_pre_beacon.get("power")
+
+            cur_dic_data = {"pos_x": cur_beacon_pos_x, "pos_y": cur_beacon_pos_y, "power": cur_beacon_power}
+            tx_ticket.beacon_preset_data[cur_beacon_id] = cur_dic_data
+
+        response_values: dict = {"msg": "Successfully inserted beacon location information into ticket",
+                                 "valid": True}
+        return response_values
