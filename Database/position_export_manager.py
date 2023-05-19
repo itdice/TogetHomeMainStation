@@ -46,14 +46,14 @@ class PositionManagerSystem:
 
         count = cursor.execute(sql)
         if count > 0:
-            result_json_data["Valid"] = True
+            result_json_data["valid"] = True
             result_json_data["device_count"] = 0
             total_data = cursor.fetchall()
             for data in total_data:
                 result_json_data["device_count"] += 1
                 result_json_data["device_data"].append(dict(zip(key_list, data)))
         else:
-            result_json_data["Valid"] = False
+            result_json_data["valid"] = False
             result_json_data["device_count"] = 0
             result_json_data["msg"] = "No Position Data"
 
