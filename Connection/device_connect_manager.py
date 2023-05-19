@@ -41,27 +41,27 @@ ips_thread.start()
 
 @sio.event
 def connect(sid, environ):
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
     print(f"Client [{sid}] Connected!!!")
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
 
 
 @sio.event
 def disconnect(sid):
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
     print(f"Client [{sid}] Disconnected!!!")
     response_values: dict = active_connector.device_disconnect(sid)
     print(f"Result of Client [{sid}] Device Disconnected with...")
     print(f"Data = {response_values}")
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
 
 
 @sio.on("test_send")
 def test_send(sid, data):
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
     print(f"Client [{sid}] send Data")
     print(f"Data = {data}")
-    print("--------------------------------------------")
+    print("--------------------------------------------------------------")
 
 
 @sio.on("test_request")
