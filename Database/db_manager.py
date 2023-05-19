@@ -151,8 +151,12 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Request with No Option
+        elif tx_ticket.data_type == DataType.SPACE:  # Space Data DB Request with SpaceID Option
+            space_id_option = tx_ticket.values.get("id")
+
             sql = "SELECT HEX(ID), Familiar_name, Size_X, Size_Y FROM Space"
+            if space_id_option is not None:
+                sql += f"WHERE HEX(ID) = '{space_id_option}'"
 
             count = cursor.execute(sql)
             if count > 0:
