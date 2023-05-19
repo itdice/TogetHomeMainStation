@@ -25,13 +25,19 @@ if __name__ == '__main__':
     # Subprocess Part
     subprocess_list = [
         subprocess.Popen(["python", "Connection/device_connect_manager.py"],
-                         stdout=subprocess.STDOUT,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True),
         subprocess.Popen(["python", "Connection/external_connect_manager.py"],
-                         stdout=subprocess.STDOUT,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True),
         subprocess.Popen(["python", "Database/json_server.py"],
-                         stdout=subprocess.STDOUT,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
                          universal_newlines=True)
     ]
 
