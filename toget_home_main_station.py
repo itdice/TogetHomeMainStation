@@ -11,12 +11,10 @@ import threading
 def read_subprocess_output(_process: subprocess.Popen):
     while True:
         output = _process.stdout.readline()
-        err_output = _process.stderr.readline()
         if output == b'' and _process.poll() is not None:
             break
         if output:
             print(output, end='')
-            print(err_output, end='')
 
 
 if __name__ == '__main__':
@@ -27,16 +25,16 @@ if __name__ == '__main__':
     # Subprocess Part
     subprocess_list = [
         subprocess.Popen(["python", "Connection/device_connect_manager.py"],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
+                         stdout=subprocess.STDOUT,
+                         stderr=subprocess.PIPE,
                          universal_newlines=True),
         subprocess.Popen(["python", "Connection/external_connect_manager.py"],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
+                         stdout=subprocess.STDOUT,
+                         stderr=subprocess.PIPE,
                          universal_newlines=True),
         subprocess.Popen(["python", "Database/json_server.py"],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
+                         stdout=subprocess.STDOUT,
+                         stderr=subprocess.PIPE,
                          universal_newlines=True)
     ]
 
