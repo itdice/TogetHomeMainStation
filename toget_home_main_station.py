@@ -11,10 +11,12 @@ import threading
 def read_subprocess_output(_process: subprocess.Popen):
     while True:
         output = _process.stdout.readline()
+        err_output = _process.stderr.readline()
         if output == b'' and _process.poll() is not None:
             break
         if output:
             print(output, end='')
+            print(err_output, end='')
 
 
 if __name__ == '__main__':
