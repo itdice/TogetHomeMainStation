@@ -283,6 +283,11 @@ def ips_space(sid, data: dict):
     print(f"Client [{sid}] IPS Space Calculate with...")
     print(f"Data = {data}")  # data >> beacon_rssi_data[list]
 
+    # Device State Update Part
+    device_state_update: dict = active_connector.device_update(sid, active_session_manager.StateType.PROCESSING)
+    print(f"Client [{sid}] Device State Update Response ...")
+    print(f"Data = {device_state_update}")
+
     beacon_rssi_data: list = data.get("beacon_rssi_data")
 
     # Beacon State Update Part
@@ -296,7 +301,27 @@ def ips_space(sid, data: dict):
     if result_space_id == "FFFFFFFFFFFF":  # Space calculation failed
         response_values: dict = {"msg": "Space calculation failed", "valid": False,
                                  "space_id": result_space_id}
+        # Device State Update Part
+        device_state_update: dict = active_connector.device_update(sid, active_session_manager.StateType.MISSING)
+        print(f"Client [{sid}] Device State Update Response ...")
+        print(f"Data = {device_state_update}")
     else:  # Space calculation successful
+        # Space Size Part
+        space_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.SPACE,
+                                                {"id": result_space_id})
+        db_tx_queue.put(space_tx_ticket)
+        space_rx_ticket = db_connector.wait_to_return(space_tx_ticket.key)
+
+        if space_rx_ticket.valid is True:  # If Space Data exists
+            space_size_x: float = space_rx_ticket.values[0].get("size_x")
+            space_size_y: float = space_rx_ticket.values[0].get("size_y")
+
+            # Change the position to the center of the space.
+            device_id = active_connector.session_info.get(sid)
+            space_position_values: dict = {"device_id": device_id, "space_id": result_space_id,
+                                           "pos_x": space_size_x / 2, "pos_y": space_size_y / 2}
+            ips_connector.position_update(space_position_values)
+
         response_values: dict = {"msg": "Space calculation successful", "valid": True,
                                  "space_id": result_space_id}
 
@@ -332,9 +357,15 @@ def ips_final(sid, data: dict):
     if ticket_pos_response.get("valid") is True:
         print(f"DeviceID : [{device_id}]'s IPS Ticket Beacon Position Update Success.")
         ips_queue.put(ips_ticket)
+        # Device State Update Part
+        device_state_update: dict = active_connector.device_update(sid, active_session_manager.StateType.NORMAL)
     else:
         print(f"DeviceID : [{device_id}]'s IPS Ticket Beacon Position Update Failed.")
+        # Device State Update Part
+        device_state_update: dict = active_connector.device_update(sid, active_session_manager.StateType.MISSING)
 
+    print(f"Client [{sid}] Device State Update Response ...")
+    print(f"Data = {device_state_update}")
     print("--------------------------------------------------------------")
 
 

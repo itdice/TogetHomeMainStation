@@ -184,6 +184,32 @@ class IPSManager:
                                  "valid": True}
         return response_values
 
+    def position_update(self, position_values: dict):
+        device_id: str = position_values.get("device_id")
+
+        # Verify that the device already exists in the Position Information DB
+        check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.POS_DATA,
+                                                {"device_id": device_id})
+        self.db_tx_queue.put(check_tx_ticket)
+        check_rx_ticket = self.db_connector.wait_to_return(check_tx_ticket.key)
+
+        if check_rx_ticket.valid is True:  # Position information for that device already exists
+            # Update position information
+            response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.UPDATE,
+                                                       db_manager.DataType.POS_DATA, position_values)
+        else:  # No position information for that device
+            # Register position information
+            response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER,
+                                                       db_manager.DataType.POS_DATA, position_values)
+
+        self.db_tx_queue.put(response_tx_ticket)
+        response_rx_ticket = self.db_connector.wait_to_return(response_tx_ticket.key)
+
+        if response_rx_ticket.valid is False:
+            print(f"DeviceID : {device_id} IPS Data UPDATE ERROR")
+        else:
+            print(f"DeviceID : {device_id} IPS Data UPDATE SUCCESS!!")
+
     def startup(self):
         while True:
             now_task: IPSTX = self.ips_queue.get(block=True, timeout=None)
@@ -210,33 +236,31 @@ class IPSManager:
                 beacon_power_pac: np.ndarray = np.array(beacon_power)
                 beacon_rssi_pac: np.ndarray = np.array(beacon_raw_rssi)
                 beacon_rssi_fil: np.ndarray = self.linear_calibration(beacon_rssi_pac)
-
                 calculated_pos: np.ndarray = self.position_calculate(beacon_rssi_fil, beacon_pos_pac,
                                                                      beacon_power_pac, self.max_trust_distance)
+
+                # Space Size Part
+                space_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.SPACE,
+                                                        {"id": now_task.space_id})
+                self.db_tx_queue.put(space_tx_ticket)
+                space_rx_ticket = self.db_connector.wait_to_return(space_tx_ticket.key)
+
+                if space_rx_ticket.valid is True:  # If Space Data exists
+                    space_size_x: float = space_rx_ticket.values[0].get("size_x")
+                    space_size_y: float = space_rx_ticket.values[0].get("size_y")
+
+                    if not (0 <= calculated_pos[0] <= space_size_x and 0 <= calculated_pos[1] <= space_size_y):
+                        # If the position calculation indicates an error value,
+                        # change the position to the center of the space.
+                        calculated_pos[0] = space_size_x / 2
+                        calculated_pos[1] = space_size_y / 2
+
+                else:  # If Space Data does not exist
+                    print(f"DeviceID : {now_task.device_id} Failed to load Space Data!!")
+
                 response_values: dict = {"device_id": now_task.device_id, "space_id": now_task.space_id,
                                          "pos_x": calculated_pos[0], "pos_y": calculated_pos[1]}
 
-                # Verify that the device already exists in the Position Information DB
-                check_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.POS_DATA,
-                                                        {"device_id": now_task.device_id})
-                self.db_tx_queue.put(check_tx_ticket)
-                check_rx_ticket = self.db_connector.wait_to_return(check_tx_ticket.key)
-
-                if check_rx_ticket.valid is True:  # Position information for that device already exists
-                    # Update position information
-                    response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.UPDATE,
-                                                               db_manager.DataType.POS_DATA, response_values)
-                else:  # No position information for that device
-                    # Register position information
-                    response_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER,
-                                                               db_manager.DataType.POS_DATA, response_values)
-
-                self.db_tx_queue.put(response_tx_ticket)
-                response_rx_ticket = self.db_connector.wait_to_return(response_tx_ticket.key)
-
-                if response_rx_ticket.valid is False:
-                    print(f"DeviceID : {now_task.device_id} IPS Data UPDATE ERROR")
-                else:
-                    print(f"DeviceID : {now_task.device_id} IPS Data UPDATE SUCCESS!!")
+                self.position_update(response_values)
             else:
                 print("Warning! The beacon location information has not been updated on the ticket.")
