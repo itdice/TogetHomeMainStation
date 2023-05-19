@@ -4,20 +4,28 @@
 #
 # Created by IT DICE on 2023/04/30.
 #
+import sys
+import os
+import operator
 from queue import Queue
 import numpy as np  # NUMPY
 
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))  # Master Path Finder
+from Database import db_manager
+
 
 class IPSTX:
-    def __init__(self):
-        pass  # Todo Create IPS Ticket
+    def __init__(self, device_id: str, space_id: str, beacon_list: list):
+        self.beacon_list = beacon_list
 
 
 class IPSManager:
-    def __init__(self, ips_queue: Queue, db_tx_queue: Queue, db_rx_queue: Queue):
+    def __init__(self, ips_queue: Queue, db_tx_queue: Queue, db_rx_queue: Queue,
+                 db_connector: db_manager.DatabaseManagerSystem):
         self.ips_queue = ips_queue
         self.db_tx_queue = db_tx_queue
         self.db_rx_queue = db_rx_queue
+        self.db_connector = db_connector
 
         self.max_trust_distance: float = 5.500
         self.max_error_distance: float = 2.223
@@ -107,3 +115,45 @@ class IPSManager:
 
     def startup(self):
         pass  # Todo Developing IPS Calculation Operations
+
+    def space_calculate(self, beacon_list: list) -> str:  # beacon_list >> {id[str], state[str], rssi[list]}
+        request_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.PRI_BEACON, {})
+        self.db_tx_queue.put(request_tx_ticket)
+        request_rx_ticket = self.db_connector.wait_to_return(request_tx_ticket.key)
+
+        if request_rx_ticket.valid is False:  # Primary Beacon data does not exist
+            response_value: str = "FFFFFFFFFFFF"  # Unknown Space
+            return response_value
+
+        pri_beacon_data: list = request_rx_ticket.values  # pri_beacon_data >> {beacon_id, space_id, min_rssi, max_rssi}
+        space_data: dict = {}  # Space Weight Value
+
+        for one_beacon in beacon_list:
+            cur_beacon_id: str = one_beacon.get('id')
+            cur_raw_beacon_rssi: list = one_beacon.get('rssi')
+
+            cur_pac_beacon_rssi: np.ndarray = np.array([cur_raw_beacon_rssi])
+            cur_fil_beacon_rssi: np.ndarray = self.linear_calibration(cur_pac_beacon_rssi)
+            cur_mean_beacon_rssi: int = round(cur_fil_beacon_rssi.mean(axis=1)[0])
+
+            for one_pri_beacon in pri_beacon_data:
+                pri_beacon_id: str = one_pri_beacon.get('beacon_id')
+                pri_space_id: str = one_pri_beacon.get('space_id')
+                pri_min_rssi: int = one_pri_beacon.get('min_rssi')
+                pri_max_rssi: int = one_pri_beacon.get('max_rssi')
+                pri_mean_rssi: int = round((pri_max_rssi + pri_min_rssi) / 2)
+
+                if space_data.get(pri_space_id) is None:  # Does not have a corresponding Space ID
+                    space_data[pri_space_id] = 0
+
+                if pri_beacon_id == cur_beacon_id:
+                    if pri_min_rssi <= cur_mean_beacon_rssi <= pri_max_rssi:  # within range
+                        space_data[pri_space_id] += abs(cur_mean_beacon_rssi - pri_mean_rssi)
+                    else:
+                        space_data[pri_space_id] += 2 * abs(cur_mean_beacon_rssi - pri_mean_rssi)
+
+        # Output the least weighted Space ID and value
+        min_weight_space = min(space_data.items(), key=operator.itemgetter(1))
+        response_space_id: str = min_weight_space[0]
+
+        return response_space_id
