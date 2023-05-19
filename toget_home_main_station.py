@@ -12,8 +12,10 @@ def read_subprocess_output(_process: subprocess.Popen):
     while True:
         output = _process.stdout.readline()
         if output == b'' and _process.poll() is not None:
+            print("kill")
             break
-        print(output, end='')
+        if output:
+            print(output.decode().strip())
 
 
 if __name__ == '__main__':

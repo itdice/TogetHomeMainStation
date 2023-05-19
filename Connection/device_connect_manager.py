@@ -66,7 +66,7 @@ def test_send(sid, data):
 
 @sio.on("test_request")
 def test_request(sid):
-    print("--------------------------------------------------------------")
+    print("--------------------------------------------------------------", file=sys.stdout)
     print(f"Client [{sid}] request Test Data!!!")
     print("--------------------------------------------------------------")
 
