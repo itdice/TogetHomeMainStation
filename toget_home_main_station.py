@@ -53,8 +53,6 @@ if __name__ == '__main__':
 
         for process in subprocess_list:
             process.terminate()
-        for thread in thread_list:
-            thread.join()
 
         print("--------------------------------------------")
         print("Stopped")
