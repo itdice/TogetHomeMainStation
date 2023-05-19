@@ -292,8 +292,12 @@ class DatabaseManagerSystem:
             else:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
-        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Request with No Option
+        elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Request with DeviceID Option
+            device_id_option = tx_ticket.values.get("device_id")
+
             sql = "SELECT HEX(DeviceID), HEX(SpaceID), Pos_X, Pos_Y FROM Pos_Data"
+            if device_id_option is not None:
+                sql += f"WHERE HEX(DeviceID) = '{device_id_option}'"
 
             count = cursor.execute(sql)
             if count > 0:
