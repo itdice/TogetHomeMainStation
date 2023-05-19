@@ -282,7 +282,14 @@ def ips_space(sid, data: dict):
     print(f"Data = {data}")  # data >> beacon_rssi_data[list]
 
     beacon_rssi_data: list = data.get("beacon_rssi_data")
-    result_space_id: str = ips_connector.space_calculate(beacon_rssi_data)
+
+    # Beacon State Update Part
+    if active_connector.beacon_state_update(beacon_rssi_data) is True:
+        print(f"Client [{sid}] --> Successfully updated beacon status information.")
+    else:
+        print(f"Client [{sid}] --> Failed to update beacon status information.")
+
+    result_space_id: str = ips_connector.space_calculate(beacon_rssi_data)  # IPS Space Calculate
 
     if result_space_id == "FFFFFFFFFFFF":  # Space calculation failed
         response_values: dict = {"msg": "Space calculation failed", "valid": False,
@@ -291,9 +298,42 @@ def ips_space(sid, data: dict):
         response_values: dict = {"msg": "Space calculation successful", "valid": True,
                                  "space_id": result_space_id}
 
+    print(f"Response to Client [{sid}] IPS Space Calculate with...")
+    print(f"Data = {response_values}")
+
     # Answer the results of the IPS Space Calculate
     # response_values >> msg[str], valid[bool], space_id[str]
     sio.emit('ips_space_response', response_values, room=sid)
+    print("--------------------------------------------------------------")
+
+
+@sio.on("ips_final")  # IPS Final Calculate Request
+def ips_final(sid, data: dict):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] IPS Space Calculate with...")
+    print(f"Data = {data}")  # data >> device_id[str], space_id[str], beacon_rssi_data[list]
+
+    device_id: str = data.get("device_id")
+    space_id: str = data.get("space_id")
+    beacon_rssi_data: list = data.get("beacon_rssi_data")
+
+    # Beacon State Update Part
+    if active_connector.beacon_state_update(beacon_rssi_data) is True:
+        print(f"Client [{sid}] --> Successfully updated beacon status information.")
+    else:
+        print(f"Client [{sid}] --> Failed to update beacon status information.")
+
+    # IPS Ticket and Beacon Position Update Part
+    ips_ticket = ips_calculate_manager.IPSTX(device_id, space_id, beacon_rssi_data)
+    ticket_pos_response: dict = ips_connector.ticket_pos_request(ips_ticket)
+
+    if ticket_pos_response.get("valid") is True:
+        print(f"DeviceID : [{device_id}]'s IPS Ticket Beacon Position Update Success.")
+        ips_queue.put(ips_ticket)
+    else:
+        print(f"DeviceID : [{device_id}]'s IPS Ticket Beacon Position Update Failed.")
+
+    print("--------------------------------------------------------------")
 
 
 if __name__ == '__main__':
