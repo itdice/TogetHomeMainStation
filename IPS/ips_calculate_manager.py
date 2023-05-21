@@ -218,6 +218,7 @@ class IPSManager:
                 beacon_pos: list = []
                 beacon_power: list = []
                 beacon_raw_rssi: list = []
+                max_length_rssi: int = 0
 
                 for one_beacon in now_task.beacon_rssi_data:
                     beacon_id: str = one_beacon.get("id")
@@ -231,6 +232,15 @@ class IPSManager:
                     beacon_pos.append([pos_x, pos_y])
                     beacon_power.append([power])
                     beacon_raw_rssi.append(beacon_rssi)
+
+                    # To create an array, the number of elements must be the same,
+                    # so find the maximum number of elements.
+                    max_length_rssi = len(beacon_rssi) if max_length_rssi < len(beacon_rssi) else max_length_rssi
+
+                # [-120, ...] Extends an array with fewer than the maximum number of elements.
+                for one_list in beacon_raw_rssi:
+                    if len(one_list) < max_length_rssi:
+                        one_list.extend([-120 for cir in range(max_length_rssi - len(one_list))])
 
                 beacon_pos_pac: np.ndarray = np.array(beacon_pos)
                 beacon_power_pac: np.ndarray = np.array(beacon_power)
