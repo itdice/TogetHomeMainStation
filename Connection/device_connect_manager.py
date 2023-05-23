@@ -81,11 +81,11 @@ def test_request(sid):
         rx_ticket.description()
     """
 
-    sio.emit('test_response', {'message': 'Test connection from Server',
-                               "hex": 0xAABBCCDDEEFF,
-                               "int": 123456789,
-                               "float": 1.2345678
-                               }, room=sid)
+    sio.emit('test_response', [{'message': 'Test connection from Server',
+                                "hex": 0xAABBCCDDEEFF,
+                                "int": 123456789,
+                                "float": 1.2345678
+                               }], room=sid)
 
     print("--------------------------------------------------------------")
     print(f"Test Data Send to Client [{sid}]")
