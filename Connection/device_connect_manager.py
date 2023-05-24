@@ -106,6 +106,7 @@ def data_request(sid, data: dict):
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
     response_list: list = request_rx_ticket.values
+    response_list[0]["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Request Data with...")
     print(f"Data = {response_list}")
 
@@ -222,6 +223,7 @@ def data_register(sid, data: dict):
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
     response_list: list = request_rx_ticket.values
+    response_list[0]["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Register Data with...")
     print(f"Data = {response_list}")
 
@@ -245,6 +247,7 @@ def data_update(sid, data: dict):
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
     response_list: list = request_rx_ticket.values
+    response_list[0]["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Update Data with...")
     print(f"Data = {response_list}")
 
@@ -268,6 +271,7 @@ def data_delete(sid, data: dict):
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
     response_list: list = request_rx_ticket.values
+    response_list[0]["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Delete Data with...")
     print(f"Data = {response_list}")
 
