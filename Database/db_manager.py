@@ -322,6 +322,9 @@ class DatabaseManagerSystem:
             response_valid = False
             response_values = [{"msg": "Data Type Error"}]
 
+            rx_ticket = DatabaseRX(tx_ticket.key, tx_ticket.data_type, response_values, response_valid)
+            return rx_ticket
+
         connection.commit()
         connection.close()
 
@@ -475,16 +478,25 @@ class DatabaseManagerSystem:
             WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
             """
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon State or Power Update
-            if tx_ticket.values.get('state') is not None and tx_ticket.values.get('isprimary') is None:
+            if tx_ticket.values.get('state') is not None and tx_ticket.values.get('isprimary') is None \
+                    and tx_ticket.values.get('power') is None:
                 sql = f"""
                 UPDATE Beacon
                 SET State = UNHEX('{tx_ticket.values.get('state')}')
                 WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
                 """
-            elif tx_ticket.values.get('state') is None and tx_ticket.values.get('isprimary') is not None:
+            elif tx_ticket.values.get('state') is None and tx_ticket.values.get('isprimary') is not None \
+                    and tx_ticket.values.get('power') is None:
                 sql = f"""
                 UPDATE Beacon
                 SET isPrimary = {bool(tx_ticket.values.get('isprimary'))}
+                WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
+                """
+            elif tx_ticket.values.get('state') is None and tx_ticket.values.get('isprimary') is None \
+                    and tx_ticket.values.get('power') is not None:
+                sql = f"""
+                UPDATE Beacon
+                SET Power = {bool(tx_ticket.values.get('power'))}
                 WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
                 """
             else:
