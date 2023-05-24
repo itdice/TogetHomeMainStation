@@ -81,7 +81,7 @@ class IPSManager:
 
     def distance(self, rssi: np.ndarray, preset: np.ndarray):
         rssi_cal_data = np.array([rssi.mean(axis=1),
-                                  rssi.max(axis=1, initial=-120),
+                                  rssi.max(axis=1, initial=-20),
                                   rssi.min(axis=1, initial=-120)]).T
 
         upper_avg = preset[:, 0] - rssi_cal_data[:, 0]
@@ -115,6 +115,18 @@ class IPSManager:
         result_pos[1] = (-1 * (A / B)) * ((B * F) - (E * C)) / ((A * E) - (D * B)) - (C / B)
 
         return result_pos
+
+    def rssi_modify(self, rssi: list) -> dict:  # rssi >> list of int value
+        raw_rssi: list = rssi
+        pac_rssi: np.ndarray = np.array([raw_rssi])
+        fil_rssi: np.ndarray = self.linear_calibration(pac_rssi)
+
+        mean_rssi: int = round(fil_rssi.mean(axis=1)[0])
+        min_rssi: int = round(fil_rssi.min(axis=1, initial=-120)[0])
+        max_rssi: int = round(fil_rssi.max(axis=1, initial=-20)[0])
+
+        response_values: dict = {"mean_rssi": mean_rssi, "min_rssi": min_rssi, "max_rssi": max_rssi}
+        return response_values
 
     def space_calculate(self, beacon_rssi_data: list) -> str:  # beacon_rssi_data >> {id[str], state[str], rssi[list]}
         request_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.PRI_BEACON, {})
