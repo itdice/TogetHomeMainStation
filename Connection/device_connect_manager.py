@@ -149,7 +149,7 @@ def home_setup(sid, data: dict):
     print(f"Data = {response_values}")
 
     # Answer the results of the Home data registration
-    # response_values >> home_name[str], interval_time[int], expire_count[int]
+    # response_values >> `msg[str], valid[bool], `home_name[str], `interval_time[int], `expire_count[int]
     sio.emit('home_setup_response', response_values, room=sid)
     print("--------------------------------------------------------------")
 
@@ -170,11 +170,12 @@ def device_register(sid, data: dict):
         check_rx_ticket = db_connector.wait_to_return(check_tx_ticket.key)
         if check_rx_ticket.valid is True:  # Device ID exists in DB
             response_values: dict = active_connector.device_connect(sid, device_id_option)
+            response_values["id"] = device_id_option
             print(f"Response to Client [{sid}] Device Register with...")
             print(f"Data = {response_values}")
 
             # Answer the results of the Device data registration
-            # response_values >> msg[str], valid[bool]
+            # response_values >> msg[str], valid[bool], id[str]
             sio.emit('device_register_response', response_values, room=sid)
             print("--------------------------------------------------------------")
             return None
@@ -190,11 +191,12 @@ def device_register(sid, data: dict):
 
     if registered_id is not None:  # If the reply message has a newly registered ID
         response_values: dict = active_connector.device_connect(sid, registered_id)
+        response_values["id"] = registered_id
         print(f"Response to Client [{sid}] Device Register with...")
         print(f"Data = {response_values}")
 
         # Answer the results of the Device data registration
-        # response_values >> msg[str], valid[bool]
+        # response_values >> msg[str], valid[bool], id[str]
         sio.emit('device_register_response', response_values, room=sid)
         print("--------------------------------------------------------------")
         return None
@@ -222,15 +224,63 @@ def data_register(sid, data: dict):
     db_tx_queue.put(request_tx_ticket)
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
-    response_list: list = request_rx_ticket.values
-    response_list[0]["valid"] = request_rx_ticket.valid
+    response_values: dict = request_rx_ticket.values[0]
+    response_values["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Register Data with...")
-    print(f"Data = {response_list}")
+    print(f"Data = {response_values}")
 
     # Answer the results of DB Register
-    # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_register_response', response_list, room=sid)
+    # response_values >> msg[str], valid[bool], `id[str]
+    sio.emit('data_register_response', response_values, room=sid)
     print("--------------------------------------------------------------")
+
+
+@sio.on("beacon_power_update")  # Beacon Power Data Update
+def beacon_power_update(sid, data: dict):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] Beacon Power with...")
+    print(f"Data = {data}")  # data >> id[str], state[str], rssi[list]
+
+    beacon_id: str = data.get("id")
+    rssi_data: list = data.get("rssi")
+    beacon_rssi_data: list = [data]
+
+    # Beacon State Update Part
+    if active_connector.beacon_state_update(beacon_rssi_data) is True:
+        print(f"Client [{sid}] --> Successfully updated beacon status information.")
+    else:
+        print(f"Client [{sid}] --> Failed to update beacon status information.")
+
+    # Beacon Power Data Part
+    if beacon_id is not None and rssi_data is not None:
+        result_data: dict = ips_connector.rssi_modify(rssi_data)
+        mean_rssi: int = result_data.get("mean_rssi")
+
+        update_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.UPDATE, db_manager.DataType.BEACON,
+                                                 {"id": beacon_id, "power": mean_rssi})
+        db_tx_queue.put(update_tx_ticket)
+        update_rx_ticket = db_connector.wait_to_return(update_tx_ticket.key)
+
+        response_values: dict = update_rx_ticket.values[0]
+        response_values["valid"] = update_rx_ticket.valid
+        print(f"Response to Client [{sid}] Beacon Power Update with...")
+        print(f"Data = {response_values}")
+
+        # Answer the results of Beacon Power Update
+        # response_values >> msg[str], valid[bool]
+        sio.emit('beacon_power_update_response', response_values)
+        print("--------------------------------------------------------------")
+        return None
+    else:
+        response_values: dict = {"msg": "No Option Data", "valid": False}
+        print(f"Response to Client [{sid}] Beacon Power Update with...")
+        print(f"Data = {response_values}")
+
+        # Answer the results of Beacon Power Update
+        # response_values >> msg[str], valid[bool]
+        sio.emit('beacon_power_update_response', response_values)
+        print("--------------------------------------------------------------")
+        return None
 
 
 @sio.on("data_update")  # DB Data Update
@@ -246,14 +296,14 @@ def data_update(sid, data: dict):
     db_tx_queue.put(request_tx_ticket)
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
-    response_list: list = request_rx_ticket.values
-    response_list[0]["valid"] = request_rx_ticket.valid
+    response_values: dict = request_rx_ticket.values[0]
+    response_values["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Update Data with...")
-    print(f"Data = {response_list}")
+    print(f"Data = {response_values}")
 
     # Answer the results of DB Update
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_update_response', response_list, room=sid)
+    sio.emit('data_update_response', response_values, room=sid)
     print("--------------------------------------------------------------")
 
 
@@ -270,14 +320,14 @@ def data_delete(sid, data: dict):
     db_tx_queue.put(request_tx_ticket)
     request_rx_ticket = db_connector.wait_to_return(request_tx_ticket.key)
 
-    response_list: list = request_rx_ticket.values
-    response_list[0]["valid"] = request_rx_ticket.valid
+    response_values: dict = request_rx_ticket.values[0]
+    response_values["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Delete Data with...")
-    print(f"Data = {response_list}")
+    print(f"Data = {response_values}")
 
     # Answer the results of DB Delete
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_delete_response', response_list, room=sid)
+    sio.emit('data_delete_response', response_values, room=sid)
     print("--------------------------------------------------------------")
 
 
