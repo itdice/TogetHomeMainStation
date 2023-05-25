@@ -392,8 +392,8 @@ class DatabaseManagerSystem:
             INSERT INTO PRI_Beacon(BeaconID, SpaceID, Min_RSSI, Max_RSSI)
             VALUES (UNHEX('{tx_ticket.values.get('beacon_id')}'),
             UNHEX('{tx_ticket.values.get('space_id')}'),
-            {tx_ticket.values.get('min_rssi', -90)},
-            {tx_ticket.values.get('max_rssi', -70)})"""
+            {tx_ticket.values.get('min_rssi', -70)},
+            {tx_ticket.values.get('max_rssi', -50)})"""
         elif tx_ticket.data_type == DataType.ROUTER:  # Router Data DB Register
             registered_id = self.new_id(DataType.ROUTER)
 
@@ -594,8 +594,7 @@ class DatabaseManagerSystem:
         elif tx_ticket.data_type == DataType.PRI_BEACON:  # Primary Beacon RSSI Data Delete
             sql = f"""
             DELETE FROM PRI_Beacon
-            WHERE HEX(BeaconID) = '{tx_ticket.values.get('beacon_id')}' and
-            HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
+            WHERE HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
         elif tx_ticket.data_type == DataType.ROUTER:  # Router Data Delete
             sql = f"""
@@ -605,8 +604,7 @@ class DatabaseManagerSystem:
         elif tx_ticket.data_type == DataType.PRI_ROUTER:  # Primary Router RSSI Data Delete
             sql = f"""
             DELETE FROM PRI_Router
-            WHERE HEX(RouterID) = '{tx_ticket.values.get('router_id')}' and
-            HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
+            WHERE HEX(SpaceID) = '{tx_ticket.values.get('space_id')}'
             """
         elif tx_ticket.data_type == DataType.POS_DATA:  # Position Data Delete
             sql = f"""

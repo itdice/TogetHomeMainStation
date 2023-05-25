@@ -211,7 +211,67 @@ def device_register(sid, data: dict):
         return None
 
 
-@sio.on("data_register")  # DB Data Register excluding Home and Device
+@sio.on("primary_beacon_register")  # Primary Beacon Register
+def primary_beacon_register(sid, data: dict):
+    print("--------------------------------------------------------------")
+    print(f"Client [{sid}] Data Register with...")
+    print(f"Data = {data}")  # data >> space_id[str], beacon_rssi_data[list]
+
+    space_id_option: str = data.get("space_id")
+    beacon_rssi_data: list = data.get("beacon_rssi_data")
+    check_list: list = []
+
+    # Beacon State Update Part
+    if active_connector.beacon_state_update(beacon_rssi_data) is True:
+        print(f"Client [{sid}] --> Successfully updated beacon status information.")
+    else:
+        print(f"Client [{sid}] --> Failed to update beacon status information.")
+
+    # Check SpaceID Option
+    if space_id_option is not None:
+        remove_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.DELETE, db_manager.DataType.PRI_BEACON,
+                                                 {"space_id": space_id_option})
+        db_tx_queue.put(remove_tx_ticket)
+        remove_rx_ticket = db_connector.wait_to_return(remove_tx_ticket.key)
+
+        # If Primary Beacon Data is Deleted
+        if remove_rx_ticket.valid is True:
+            for one_beacon_data in beacon_rssi_data:
+                one_beacon_id: str = one_beacon_data.get("id")
+                one_beacon_rssi: list = one_beacon_data.get("rssi")
+
+                modify_data: dict = ips_connector.rssi_modify(one_beacon_rssi)
+                min_rssi: int = modify_data.get("min_rssi")
+                max_rssi: int = modify_data.get("max_rssi")
+
+                input_data: dict = {"beacon_id": one_beacon_id, "space_id": space_id_option,
+                                    "min_rssi": min_rssi, "max_rssi": max_rssi}
+                input_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REGISTER, db_manager.DataType.PRI_BEACON,
+                                                        input_data)
+                db_tx_queue.put(input_tx_ticket)
+                input_rx_ticket = db_connector.wait_to_return(input_tx_ticket.key)
+                check_list.append(input_rx_ticket.valid)
+
+            if False in check_list:
+                response_values: dict = {"msg": "Register Failed", "valid": False}
+            else:
+                response_values: dict = {"msg": "Register Success", "valid": True}
+        else:
+            response_values: dict = remove_rx_ticket.values[0]
+            response_values["valid"] = remove_rx_ticket.valid
+    else:
+        response_values: dict = {"msg": "No Option Data", "valid": False}
+
+    print(f"Response to Client [{sid}] Register Data with...")
+    print(f"Data = {response_values}")
+
+    # Answer the results of Primary Beacon Register
+    # response_values >> msg[str], valid[bool]
+    sio.emit('primary_beacon_register', response_values, room=sid)
+    print("--------------------------------------------------------------")
+
+
+@sio.on("data_register")  # DB Data Register excluding Home, Device and Primary Beacon
 def data_register(sid, data: dict):
     print("--------------------------------------------------------------")
     print(f"Client [{sid}] Data Register with...")
@@ -283,7 +343,7 @@ def beacon_power_update(sid, data: dict):
         return None
 
 
-@sio.on("data_update")  # DB Data Update
+@sio.on("data_update")  # DB Data Update excluding Beacon Power
 def data_update(sid, data: dict):
     print("--------------------------------------------------------------")
     print(f"Client [{sid}] Data Update with...")
