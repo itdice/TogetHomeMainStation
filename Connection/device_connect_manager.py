@@ -267,7 +267,7 @@ def primary_beacon_register(sid, data: dict):
 
     # Answer the results of Primary Beacon Register
     # response_values >> msg[str], valid[bool]
-    sio.emit('primary_beacon_register', response_values, room=sid)
+    sio.emit('primary_beacon_register_response', response_values, room=sid)
     print("--------------------------------------------------------------")
 
 
