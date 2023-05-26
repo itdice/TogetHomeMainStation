@@ -109,11 +109,13 @@ def data_request(sid, data: dict):
     response_list[0]["valid"] = request_rx_ticket.valid
     print(f"Response to Client [{sid}] Request Data with...")
     print(f"Data = {response_list}")
+    print("--------------------------------------------------------------")
 
     # Answer the results of DB Requests
     # response_values >> Answers in list form, different result values for each data type
-    sio.emit('data_request_response', response_list, room=sid)
-    print("--------------------------------------------------------------")
+    return response_list
+    # sio.emit('data_request_response', response_list, room=sid)
+
 
 
 @sio.on("home_setup")  # Home Data Setup
