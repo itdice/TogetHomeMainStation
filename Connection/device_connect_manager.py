@@ -314,6 +314,7 @@ def beacon_power_update(sid, data: dict):
     # Beacon Power Data Part
     if beacon_id is not None and rssi_data is not None:
         result_data: dict = ips_connector.rssi_modify(rssi_data)
+        print(f"Modify Data =>{result_data}")
         mean_rssi: int = result_data.get("mean_rssi")
 
         update_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.UPDATE, db_manager.DataType.BEACON,
