@@ -227,7 +227,7 @@ class DatabaseManagerSystem:
             elif space_id_option is not None and isprimary_option is not None:
                 sql += f" WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
             else:
-                sql += f""
+                pass
 
             count = cursor.execute(sql)
             if count > 0:
