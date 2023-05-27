@@ -216,23 +216,20 @@ class DatabaseManagerSystem:
                 response_valid = False
                 response_values = [{"msg": "No Data"}]
         elif tx_ticket.data_type == DataType.BEACON:  # Beacon Data DB Request with SpaceID and isPrimary Option
-            print("fist")
             space_id_option = tx_ticket.values.get("space_id")
-            isprimary_option = bool(tx_ticket.values.get("isprimary"))
+            isprimary_option = tx_ticket.values.get("isprimary")
 
             sql = "SELECT HEX(ID), HEX(State), HEX(SpaceID), Pos_X, Pos_Y, Power, isPrimary FROM Beacon"
             if space_id_option is None and isprimary_option is not None:
-                sql += f" WHERE isPrimary = {isprimary_option}"
+                sql += f" WHERE isPrimary = {bool(isprimary_option)}"
             elif space_id_option is not None and isprimary_option is None:
                 sql += f" WHERE HEX(SpaceID) = '{space_id_option}'"
             elif space_id_option is not None and isprimary_option is not None:
-                sql += f" WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {isprimary_option}"
+                sql += f" WHERE HEX(SpaceID) = '{space_id_option}' AND isPrimary = {bool(isprimary_option)}"
             else:
-                print("second")
-                pass
+                sql += f""
 
             count = cursor.execute(sql)
-            print(f"count : {count}")
             if count > 0:
                 response_valid = True
                 data = cursor.fetchall()
