@@ -496,7 +496,7 @@ class DatabaseManagerSystem:
                     and tx_ticket.values.get('power') is not None:
                 sql = f"""
                 UPDATE Beacon
-                SET Power = {bool(tx_ticket.values.get('power'))}
+                SET Power = {tx_ticket.values.get('power')}
                 WHERE HEX(ID) = '{tx_ticket.values.get('id')}'
                 """
             else:

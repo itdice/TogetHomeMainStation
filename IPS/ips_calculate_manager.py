@@ -81,8 +81,8 @@ class IPSManager:
 
     def distance(self, rssi: np.ndarray, preset: np.ndarray):
         rssi_cal_data = np.array([rssi.mean(axis=1),
-                                  rssi.max(axis=1, initial=-20),
-                                  rssi.min(axis=1, initial=-120)]).T
+                                  rssi.max(axis=1, initial=-120),
+                                  rssi.min(axis=1, initial=0)]).T
 
         upper_avg = preset[:, 0] - rssi_cal_data[:, 0]
         upper_max = preset[:, 0] - rssi_cal_data[:, 1]
@@ -122,8 +122,8 @@ class IPSManager:
         fil_rssi: np.ndarray = self.linear_calibration(pac_rssi)
 
         mean_rssi: int = round(fil_rssi.mean(axis=1)[0])
-        min_rssi: int = round(fil_rssi.min(axis=1, initial=-120)[0])
-        max_rssi: int = round(fil_rssi.max(axis=1, initial=-20)[0])
+        min_rssi: int = round(fil_rssi.min(axis=1, initial=0)[0])
+        max_rssi: int = round(fil_rssi.max(axis=1, initial=-120)[0])
 
         response_values: dict = {"mean_rssi": mean_rssi, "min_rssi": min_rssi, "max_rssi": max_rssi}
         return response_values
