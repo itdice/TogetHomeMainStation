@@ -421,22 +421,6 @@ def ips_space(sid, data: dict):
         print(f"Client [{sid}] Device State Update Response ...")
         print(f"Data = {device_state_update}")
     else:  # Space calculation successful
-        # Space Size Part
-        space_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.SPACE,
-                                                {"id": result_space_id})
-        db_tx_queue.put(space_tx_ticket)
-        space_rx_ticket = db_connector.wait_to_return(space_tx_ticket.key)
-
-        if space_rx_ticket.valid is True:  # If Space Data exists
-            space_size_x: float = space_rx_ticket.values[0].get("size_x")
-            space_size_y: float = space_rx_ticket.values[0].get("size_y")
-
-            # Change the position to the center of the space.
-            device_id = active_connector.session_info.get(sid)
-            space_position_values: dict = {"device_id": device_id, "space_id": result_space_id,
-                                           "pos_x": space_size_x / 2, "pos_y": space_size_y / 2}
-            ips_connector.position_update(space_position_values)
-
         response_values: dict = {"msg": "Space calculation successful", "valid": True,
                                  "space_id": result_space_id}
 
