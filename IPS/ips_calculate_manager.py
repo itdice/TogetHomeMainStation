@@ -140,6 +140,13 @@ class IPSManager:
         pri_beacon_data: list = request_rx_ticket.values  # pri_beacon_data >> {beacon_id, space_id, min_rssi, max_rssi}
         space_data: dict = {}  # Space Weight Value
 
+        max_length_rssi: int = 0
+        for one_data in beacon_rssi_data:
+            max_length_rssi = len(one_data) if max_length_rssi < len(one_data) else max_length_rssi
+        for one_data in beacon_rssi_data:
+            if len(one_data) < max_length_rssi:
+                one_data.extend([one_data[-1] for cir in range(max_length_rssi - len(one_data))])
+
         for one_beacon in beacon_rssi_data:
             cur_beacon_id: str = one_beacon.get('id')
             cur_raw_beacon_rssi: list = one_beacon.get('rssi')
