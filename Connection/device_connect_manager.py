@@ -452,7 +452,7 @@ def ips_space(sid, data: dict):
 @sio.on("ips_final")  # IPS Final Calculate Request
 def ips_final(sid, data: dict):
     print("--------------------------------------------------------------")
-    print(f"Client [{sid}] IPS Space Calculate with...")
+    print(f"Client [{sid}] IPS Final Calculate with...")
     print(f"Data = {data}")  # data >> space_id[str], beacon_rssi_data[list]
 
     device_id: str = active_connector.session_info[sid]
