@@ -156,7 +156,7 @@ class DatabaseManagerSystem:
 
             sql = "SELECT HEX(ID), Familiar_name, Size_X, Size_Y FROM Space"
             if space_id_option is not None:
-                sql += f"WHERE HEX(ID) = '{space_id_option}'"
+                sql += f" WHERE HEX(ID) = '{space_id_option}'"
 
             count = cursor.execute(sql)
             if count > 0:
@@ -301,7 +301,7 @@ class DatabaseManagerSystem:
 
             sql = "SELECT HEX(DeviceID), HEX(SpaceID), Pos_X, Pos_Y FROM Pos_Data"
             if device_id_option is not None:
-                sql += f"WHERE HEX(DeviceID) = '{device_id_option}'"
+                sql += f" WHERE HEX(DeviceID) = '{device_id_option}'"
 
             count = cursor.execute(sql)
             if count > 0:
