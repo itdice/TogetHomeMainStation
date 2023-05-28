@@ -249,10 +249,10 @@ class IPSManager:
                     # so find the maximum number of elements.
                     max_length_rssi = len(beacon_rssi) if max_length_rssi < len(beacon_rssi) else max_length_rssi
 
-                # [-120, ...] Extends an array with fewer than the maximum number of elements.
+                # Extends an array with fewer than the maximum number of elements.
                 for one_list in beacon_raw_rssi:
                     if len(one_list) < max_length_rssi:
-                        one_list.extend([-120 for cir in range(max_length_rssi - len(one_list))])
+                        one_list.extend([one_list[-1] for cir in range(max_length_rssi - len(one_list))])
 
                 beacon_pos_pac: np.ndarray = np.array(beacon_pos)
                 beacon_power_pac: np.ndarray = np.array(beacon_power)
