@@ -453,9 +453,9 @@ def ips_space(sid, data: dict):
 def ips_final(sid, data: dict):
     print("--------------------------------------------------------------")
     print(f"Client [{sid}] IPS Space Calculate with...")
-    print(f"Data = {data}")  # data >> device_id[str], space_id[str], beacon_rssi_data[list]
+    print(f"Data = {data}")  # data >> space_id[str], beacon_rssi_data[list]
 
-    device_id: str = data.get("device_id")
+    device_id: str = active_connector.session_info[sid]
     space_id: str = data.get("space_id")
     beacon_rssi_data: list = data.get("beacon_rssi_data")
 
