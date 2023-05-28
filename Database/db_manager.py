@@ -619,7 +619,7 @@ class DatabaseManagerSystem:
             return rx_ticket
 
         count = cursor.execute(sql)
-        if count == 1:
+        if count >= 0:
             response_valid = True
             response_values = [{"msg": "Delete Success"}]
         else:
