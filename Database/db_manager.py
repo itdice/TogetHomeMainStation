@@ -701,9 +701,12 @@ class DatabaseManagerSystem:
     def wait_to_return(self, ticket_key: str) -> DatabaseRX:
         while True:
             if len(self.rx_key_list) > 0:
-                with self.lock:
-                    if self.rx_key_list[0] == ticket_key:
-                        data_task: DatabaseRX = self.rx_queue.get()
-                        self.rx_key_list.pop(0)
-                        return data_task
-                    time.sleep(0.01)
+                self.lock.acquire()
+                if self.rx_key_list[0] == ticket_key:
+                    data_task: DatabaseRX = self.rx_queue.get()
+                    self.rx_key_list.pop(0)
+                    self.lock.release()
+                    return data_task
+                else:
+                    self.lock.release()
+                    time.sleep(0.1)
