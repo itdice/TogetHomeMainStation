@@ -261,6 +261,8 @@ class IPSManager:
                 calculated_pos: np.ndarray = self.position_calculate(beacon_rssi_fil, beacon_pos_pac,
                                                                      beacon_power_pac, self.max_trust_distance)
 
+                print(f"X : {calculated_pos[0]}, Y : {calculated_pos[1]}")
+
                 # Space Size Part
                 space_tx_ticket = db_manager.DatabaseTX(db_manager.AccessType.REQUEST, db_manager.DataType.SPACE,
                                                         {"id": now_task.space_id})
